@@ -9,9 +9,15 @@ export const reminders = pgTable(
     title: text("title").notNull(),
     titleAssamese: text("title_assamese"),
     titleHindi: text("title_hindi"),
+    titleBengali: text("title_bengali"),
+    titleKannada: text("title_kannada"),
     time: text("time").notNull(), // e.g. "09:00 AM"
     status: text("status").notNull().default("pending"), // 'pending' | 'completed' | 'missed'
     notes: text("notes"),
+    notesAssamese: text("notes_assamese"),
+    notesHindi: text("notes_hindi"),
+    notesBengali: text("notes_bengali"),
+    notesKannada: text("notes_kannada"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

@@ -180,3 +180,30 @@ The patient interface (`PatientHome.tsx`) implements a gamified, supportive **st
   - **Locked**: Soft muted state indicating upcoming sequence.
 - **Duolingo-Style Sticky Continue Bar**: Fixed bottom action bar displaying the current active task and a prominent *"Continue Journey"* button, guaranteeing dementia patients never get lost or confused.
 
+---
+
+## 10. Database Seeding & Local Docker Architecture
+
+Mindora supports both zero-configuration local development and serverless cloud deployment:
+
+### 10.1 Dual Database Environments
+- **Local Development (Docker Compose)**: Run `bun run db:docker:up` to spin up a local PostgreSQL 16 container (`postgres:16-alpine`) on port 5432 (or 5433 if 5432 is occupied), with persistent volume storage and automated healthchecks.
+- **Production / Preview (Neon Serverless)**: Branch-first serverless Postgres with instant restore, autoscaling, and Neon Auth integration.
+
+### 10.2 CSV Data Pipeline & Dynamic Content Loading
+All application data is decoupled from hardcoded source files and seeded directly into Postgres via `bun run db:seed`:
+- **12 Curated Datasets (`backend/csv/`)**:
+  - `patients.csv` (35+ localized profiles with routines and themes)
+  - `caregivers.csv` (Caregiver records and patient links)
+  - `reminders.csv` (Multilingual medication and hydration routines)
+  - `caregiver_alerts.csv` (Clinical events and telemetry warnings)
+  - `game_sessions.csv` (Historical cognitive telemetry sessions)
+  - `adaptive_difficulty.csv` (Engine state and difficulty baselines)
+  - `cultural_memories.csv` (Assamese and regional cultural memories)
+  - `familiar_memories.csv` (Folk and personal reminiscence narratives)
+  - `memory_card_items.csv` (Objects and motifs for Memory Match)
+  - `attention_pool_items.csv` (Filter targets for Attention Challenge)
+  - `pattern_sequences.csv` (Alternating motifs for Pattern Recognition)
+  - `performance_trends.csv` (Longitudinal 7-day cognitive trends)
+- **Dynamic Content API (`/api/content/*`, `/api/doctors/*`, `/api/activity-plans/*`, `/api/pairings/*`)**: The React frontend pulls live database records on initial load, caching them locally with `StorageService` for seamless offline resilience.
+

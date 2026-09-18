@@ -17,7 +17,14 @@
     "lint:frontend": "turbo lint --filter=@mindora/frontend",
     "dev:backend": "turbo dev --filter=@mindora/backend",
     "build:backend": "turbo build --filter=@mindora/backend",
-    "lint:backend": "turbo lint --filter=@mindora/backend"
+    "lint:backend": "turbo lint --filter=@mindora/backend",
+    "db:docker:up": "docker compose up -d",
+    "db:docker:down": "docker compose down",
+    "db:docker:logs": "docker compose logs -f db",
+    "db:push": "bun --filter @mindora/backend run db:push",
+    "db:seed": "bun --filter @mindora/backend run db:seed",
+    "dev:ai": "uvicorn ai_service.main:app --host 0.0.0.0 --port 8000 --reload",
+    "ai:train": "python3 ai_service/train.py"
   },
   "devDependencies": {
     "turbo": "^2.4.4"

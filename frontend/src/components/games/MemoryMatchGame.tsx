@@ -4,6 +4,7 @@ import { GameResultModal } from './GameResultModal';
 import { AdaptiveDifficultyEngine, AdaptiveResult } from '../../services/adaptiveEngine';
 import { StorageService } from '../../services/storage';
 import { AudioSpeechService } from '../../services/audioSpeech';
+import { apiClient } from '../../services/api';
 import { Language } from '../../types';
 import { getTranslation, getObjectTranslation } from '../../utils/translations';
 
@@ -77,13 +78,27 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, langua
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [cardPool, setCardPool] = useState<CardItem[]>(() => {
+    const cached = StorageService.getMemoryCards();
+    return cached.length > 0 ? cached : OBJECT_POOL;
+  });
+
+  useEffect(() => {
+    apiClient.content.getMemoryCards().then((res) => {
+      if (res.data?.items && res.data.items.length > 0) {
+        setCardPool(res.data.items);
+        StorageService.saveMemoryCards(res.data.items);
+      }
+    });
+  }, []);
+
   // Setup / start game
   useEffect(() => {
     startNewGame();
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [difficulty]);
+  }, [difficulty, cardPool]);
 
   const startNewGame = () => {
     setCurrentRound(1);
@@ -93,7 +108,8 @@ export const MemoryMatchGame: React.FC<MemoryMatchGameProps> = ({ onBack, langua
 
   const initRound = (roundNum: number) => {
     // Pick unique items from expanded pool with fresh random ordering
-    const shuffled = [...OBJECT_POOL].sort(() => Math.random() - 0.5);
+    const pool = cardPool.length >= cardCount + 3 ? cardPool : OBJECT_POOL;
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
     const selectedTargets = shuffled.slice(0, cardCount);
     const chosenAnswer = selectedTargets[Math.floor(Math.random() * selectedTargets.length)];
 

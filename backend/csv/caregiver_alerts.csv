@@ -9,7 +9,7 @@ alt-7,info,Difficulty Maintained: Attention Challenge,Attention Challenge kept a
 alt-8,success,Pattern Recognition Milestone,Anima achieved 91% accuracy on Gamosa weave pattern recognition - her highest pattern score to date!,16 Sep 10:15 AM,true,View Session
 alt-9,notice,Routine Recall Consistency,Anima has correctly reconstructed her morning routine in 4 of her last 5 attempts. Morning routine familiarity is strong.,15 Sep 10:00 AM,true,Review Activity History
 alt-10,warning,Low Accuracy Alert: Attention,Attention Challenge accuracy dropped to 68% on 4 Sep. Adaptive engine kept at Level 1 to maintain confidence.,4 Sep 11:30 AM,true,Review Session
-alt-11,info,Initial Assessment Complete,Baseline cognitive assessment completed across all 4 game types. Memory: 68%, Attention: 65%, Pattern: 90%, Routine: 75%.,1 Sep 12:00 PM,true,View Full Report
+alt-11,info,Initial Assessment Complete,"Baseline cognitive assessment completed across all 4 game types. Memory: 68%,  Attention: 65%,  Pattern: 90%,  Routine: 75%.",1 Sep 12:00 PM,true,View Full Report
 alt-12,success,Welcome to MINDORA,Anima Devi has been registered on the MINDORA platform. Cultural theme: Assam Brahmaputra Valley. Default language: Assamese.,29 Aug 9:00 AM,true,View Profile
 alt-13,success,Tashi Completed Memory Session,Tashi Dkhar scored 79% on Khasi Fruits memory match. Strong recognition of local fruits.,Today 10:15 AM,false,View Session
 alt-14,warning,Hydration Missed: Tashi,Tashi missed the 10:00 AM water reminder. Please check in.,Today 10:45 AM,false,Call Patient
@@ -22,18 +22,18 @@ alt-20,success,Deepa Palace Memory,Deepa scored 81% on Tripura Palace memory mat
 alt-21,info,Adaptive Engine Updated,Difficulty levels recalibrated for all patients based on 2-week performance data. Memory levels adjusted.,15 Sep 12:00 PM,true,Review Engine Logic
 alt-22,warning,Medicine Late: Multiple Patients,3 patients confirmed medicine reminders more than 20 minutes late today. Consider verbal prompts.,15 Sep 9:30 AM,true,View Details
 alt-23,success,Streak Extended: Anima,Anima's daily activity streak extended to 10 days. Consistent morning routine engagement.,15 Sep 6:00 PM,true,View Streak
-alt-24,notice,Pattern Diversity Observed,Patients show strong engagement with culturally-themed patterns (Gamosa, Puanchei, Shawl designs).,14 Sep 5:00 PM,true,Review Patterns
+alt-24,notice,Pattern Diversity Observed,"Patients show strong engagement with culturally-themed patterns (Gamosa,  Puanchei,  Shawl designs).",14 Sep 5:00 PM,true,Review Patterns
 alt-25,info,Audio Feedback Improved,Audio prompts updated for Assamese and Khasi language support. Better patient engagement expected.,14 Sep 12:00 PM,true,Review Changes
 alt-26,success,All Patients Active,All 7 patients completed at least one cognitive session today. Platform-wide participation at 100%.,13 Sep 6:00 PM,true,View Report
 alt-27,warning,Response Time Increased,Average response time across patients increased to 5.2 seconds today. Possible fatigue indicator.,13 Sep 11:30 AM,true,Review Details
 alt-28,success,Cultural Memory Milestone,12 cultural memory items from all NER states now active in the system. Rich cultural content library.,12 Sep 12:00 PM,true,View Library
 alt-29,info,New Patient Onboarding,Pabitri Das from Barak Valley registered. Bengali language and cultural theme configured.,12 Sep 9:00 AM,true,View Profile
 alt-30,notice,Festival Season Alert,Hornbill Festival approaching. Special festival-themed cognitive activities recommended for Naga patients.,11 Sep 5:00 PM,true,View Recommendations
-alt-31,success,Memory Game Update,New Memory Match cards added: Majuli Mask, Bamboo Shoot, Manipuri Lotus. Culturally enriched content.,11 Sep 12:00 PM,true,View Updates
+alt-31,success,Memory Game Update,"New Memory Match cards added: Majuli Mask,  Bamboo Shoot,  Manipuri Lotus. Culturally enriched content.",11 Sep 12:00 PM,true,View Updates
 alt-32,warning,Offline Sessions Pending,3 offline game sessions from Anima waiting to sync. Ensure internet connectivity.,10 Sep 4:00 PM,true,Sync Now
 alt-33,success,Caregiver Alert System,Alert notification system verified working across all 23 caregivers. Real-time updates confirmed.,10 Sep 12:00 PM,true,View System
 alt-34,info,Performance Benchmark,Platform average accuracy: 78%. Average response time: 4.8 seconds. Within healthy engagement range.,9 Sep 6:00 PM,true,View Benchmark
-alt-35,notice,Language Support Expanded,Assamese, Hindi, and English language support confirmed across all game types and reminders.,9 Sep 12:00 PM,true,Review Languages
+alt-35,notice,Language Support Expanded,"Assamese,  Hindi,  and English language support confirmed across all game types and reminders.",9 Sep 12:00 PM,true,Review Languages
 alt-36,success,Weekly Caregiver Report,Weekly cognitive summary reports sent to all 23 caregivers. Each report includes trend analysis.,8 Sep 6:00 PM,true,View Reports
 alt-37,warning,Botanical Garden Walk Missed,Anima's 11:00 AM courtyard walk reminder was not completed. Second missed activity this week.,8 Sep 11:30 AM,true,Call Patient
 alt-38,info,Difficulty Engine Calibrated,Adaptive difficulty engine calibrated for 4 game types across 35 patients. Thresholds set at 60%/75%/85%.,7 Sep 12:00 PM,true,View Settings

@@ -11,6 +11,10 @@ import { patientsRoutes } from "./routes/patients.js";
 import { remindersRoutes } from "./routes/reminders.js";
 import { alertsRoutes } from "./routes/alerts.js";
 import { aiRoutes } from "./routes/ai.js";
+import { contentRoutes } from "./routes/content.js";
+import { doctorsRoutes } from "./routes/doctors.js";
+import { activityPlansRoutes } from "./routes/activityPlans.js";
+import { pairingsRoutes } from "./routes/pairings.js";
 
 export async function buildServer() {
   const fastify = Fastify({
@@ -82,6 +86,10 @@ export async function buildServer() {
   await fastify.register(remindersRoutes, { prefix: "/api/reminders" });
   await fastify.register(alertsRoutes, { prefix: "/api/alerts" });
   await fastify.register(aiRoutes, { prefix: "/api/ai" });
+  await fastify.register(contentRoutes, { prefix: "/api/content" });
+  await fastify.register(doctorsRoutes, { prefix: "/api/doctors" });
+  await fastify.register(activityPlansRoutes, { prefix: "/api/activity-plans" });
+  await fastify.register(pairingsRoutes, { prefix: "/api/pairings" });
 
   return fastify;
 }

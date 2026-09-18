@@ -1,4 +1,14 @@
-import { GameSession, PatientProfile, Reminder, CaregiverAlert, AdaptiveDifficultyState } from '../types';
+import { 
+  GameSession, 
+  PatientProfile, 
+  Reminder, 
+  CaregiverAlert, 
+  AdaptiveDifficultyState,
+  DoctorProfile,
+  PatientActivityPlan,
+  DevicePairingRequest,
+  CulturalMemoryItem
+} from '../types';
 
 const BASE_URL = '/api';
 
@@ -134,6 +144,39 @@ export const apiClient = {
 
   // AI Recommendation Engine
   ai: {
+    analyzePatient: (params: {
+      patientId?: string;
+      patient?: Partial<PatientProfile>;
+      sessions?: GameSession[];
+    }) =>
+      request<{
+        status: string;
+        patientId: string;
+        ml_analysis: {
+          total_sessions: number;
+          overall_accuracy_avg: number;
+          average_response_time_sec: number;
+          predicted_stability_score: number;
+          fatigue_risk_level: string;
+          fatigue_risk_score: number;
+          recommended_difficulty: number;
+          stability_trend: string;
+          feature_importances: Record<string, number>;
+          modality_breakdown?: Record<string, { sessions_count: number; average_accuracy: number; average_response_time: number }>;
+          model_status: string;
+        };
+        ai_summary: {
+          executive_summary: string;
+          strengths: string[];
+          fatigue_and_strain_assessment: string;
+          regimen_recommendations: string[];
+          model_used: string;
+          source?: string;
+        };
+      }>('/ai/analyze-patient', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
     getRecommendation: (params: {
       patientName?: string;
       age?: number;
@@ -160,4 +203,58 @@ export const apiClient = {
         status: string;
       }>('/ai/service-status'),
   },
+
+  // Content (Cultural & Familiar Memories, Game Objects, Patterns, Trends)
+  content: {
+    getCulturalMemories: () =>
+      request<{ items: CulturalMemoryItem[]; count: number }>('/content/cultural-memories'),
+    getFamiliarMemories: () =>
+      request<{ items: any[]; count: number }>('/content/familiar-memories'),
+    getMemoryCards: () =>
+      request<{ items: { id: string; name: string; nameAssamese?: string; nameHindi?: string; emoji: string; color: string }[]; count: number }>('/content/memory-cards'),
+    getAttentionPool: () =>
+      request<{ items: { id: string; name: string; emoji: string; isRed: boolean; colorName?: string }[]; count: number }>('/content/attention-pool'),
+    getPatterns: () =>
+      request<{ items: { id: string; level: number; sequence: string; correctNextEmoji: string; correctNextLabel: string; optionsEmoji: string; optionsLabel: string; patternRule: string }[]; count: number }>('/content/patterns'),
+    getTrends: () =>
+      request<{ items: { id: string; day: string; accuracy: number; responseTime: number; score: number }[]; count: number }>('/content/trends'),
+  },
+
+  // Doctors
+  doctors: {
+    getAll: () => request<{ items: DoctorProfile[]; count: number }>('/doctors'),
+    getById: (id: string) => request<DoctorProfile>(`/doctors/${id}`),
+  },
+
+  // Activity Plans
+  activityPlans: {
+    getByPatientId: (patientId: string) =>
+      request<PatientActivityPlan>(`/activity-plans/${patientId}`),
+    update: (patientId: string, plan: Partial<PatientActivityPlan>) =>
+      request<PatientActivityPlan>(`/activity-plans/${patientId}`, {
+        method: 'PUT',
+        body: JSON.stringify(plan),
+      }),
+  },
+
+  // Device Pairings
+  pairings: {
+    getAll: () =>
+      request<{ items: DevicePairingRequest[]; count: number }>('/pairings'),
+    create: (pairing: { pairCode: string; deviceName: string; browserInfo?: string; patientId?: string; patientName?: string }) =>
+      request<DevicePairingRequest>('/pairings', {
+        method: 'POST',
+        body: JSON.stringify(pairing),
+      }),
+    approve: (id: string, approvedBy?: string) =>
+      request<DevicePairingRequest>(`/pairings/${id}/approve`, {
+        method: 'PATCH',
+        body: JSON.stringify({ approvedBy }),
+      }),
+    reject: (id: string) =>
+      request<DevicePairingRequest>(`/pairings/${id}/reject`, {
+        method: 'PATCH',
+      }),
+  },
 };
+

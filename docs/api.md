@@ -187,3 +187,34 @@ Returns connection status to the future FastAPI service.
 | `GET` | `/api/devices/linked` | List currently active paired screens |
 | `DELETE` | `/api/devices/linked/:id` | Revoke screen access, returning screen to pairing standby |
 
+---
+
+## 10. Dynamic Content (`/api/content/*`)
+
+Decoupled dynamic content endpoints pulling directly from PostgreSQL tables:
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/content/cultural-memories` | Cultural memories and regional heritage landmarks |
+| `GET` | `/api/content/familiar-memories` | Multilingual folk and personal reminiscence narratives |
+| `GET` | `/api/content/memory-cards` | Card pool for Memory Match (colors, multilingual labels) |
+| `GET` | `/api/content/attention-pool` | Distractor and target objects for Attention Challenge |
+| `GET` | `/api/content/patterns` | Alternating rhythm sequences for Pattern Recognition |
+| `GET` | `/api/content/trends` | 7-day longitudinal cognitive performance trends |
+
+---
+
+## 11. Doctors & Activity Plans
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/doctors` | List registered doctor profiles |
+| `GET` | `/api/doctors/:id` | Get clinician profile and linked patients |
+| `GET` | `/api/activity-plans/:patientId` | Get doctor-prescribed activity sequence and clinical goals |
+| `PUT` | `/api/activity-plans/:patientId` | Create or update activity plan for patient |
+| `GET` | `/api/pairings` | List pending and approved device pairings |
+| `POST` | `/api/pairings` | Submit a new device pairing request |
+| `PATCH` | `/api/pairings/:id/approve` | Approve pairing and assign authentication token |
+| `PATCH` | `/api/pairings/:id/reject` | Reject pairing request |
+
+

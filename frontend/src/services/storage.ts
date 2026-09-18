@@ -41,7 +41,13 @@ const STORAGE_KEYS = {
   ADAPTIVE: 'mindora_adaptive_v1',
   OFFLINE_OVERRIDE: 'mindora_offline_override_v1',
   PENDING_SYNC: 'mindora_pending_sync_v1',
-  ACCESSIBILITY: 'mindora_accessibility_v1'
+  ACCESSIBILITY: 'mindora_accessibility_v1',
+  CULTURAL_MEMORIES: 'mindora_cultural_memories_v1',
+  FAMILIAR_MEMORIES: 'mindora_familiar_memories_v1',
+  MEMORY_CARDS: 'mindora_memory_cards_v1',
+  ATTENTION_POOL: 'mindora_attention_pool_v1',
+  PATTERNS: 'mindora_patterns_v1',
+  TRENDS: 'mindora_trends_v1'
 };
 
 export class StorageService {
@@ -307,6 +313,9 @@ export class StorageService {
       if (alertsRes.data?.items && alertsRes.data.items.length > 0) {
         this.saveAlerts(alertsRes.data.items);
       }
+
+      // Also sync all patients, doctor profile, activity plans, content, and pairings
+      await this.syncFromDatabase();
     } catch {
       // Offline fallback: keep existing local data intact
     }
@@ -624,6 +633,192 @@ export class StorageService {
     window.dispatchEvent(new CustomEvent('mindora-device-paired', { detail: device }));
   }
 
+  // ==========================================
+  // Dynamic Content from Database
+  // ==========================================
+  static getCulturalMemories(): any[] {
+    if (!this.isBrowser()) return [];
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.CULTURAL_MEMORIES);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static saveCulturalMemories(items: any[]): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.CULTURAL_MEMORIES, JSON.stringify(items));
+  }
+
+  static getFamiliarMemories(): any[] {
+    if (!this.isBrowser()) return [];
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.FAMILIAR_MEMORIES);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static saveFamiliarMemories(items: any[]): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.FAMILIAR_MEMORIES, JSON.stringify(items));
+  }
+
+  static getMemoryCards(): any[] {
+    if (!this.isBrowser()) return [];
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.MEMORY_CARDS);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static saveMemoryCards(items: any[]): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.MEMORY_CARDS, JSON.stringify(items));
+  }
+
+  static getAttentionPool(): any[] {
+    if (!this.isBrowser()) return [];
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.ATTENTION_POOL);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static saveAttentionPool(items: any[]): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.ATTENTION_POOL, JSON.stringify(items));
+  }
+
+  static getPatterns(): any[] {
+    if (!this.isBrowser()) return [];
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.PATTERNS);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static savePatterns(items: any[]): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.PATTERNS, JSON.stringify(items));
+  }
+
+  static getTrends(): any[] {
+    if (!this.isBrowser()) return [];
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.TRENDS);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static saveTrends(items: any[]): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.TRENDS, JSON.stringify(items));
+  }
+
+  // ==========================================
+  // Full Database Sync on App Load
+  // ==========================================
+  static async syncFromDatabase(): Promise<boolean> {
+    if (!this.isBrowser() || this.isOffline()) return false;
+    try {
+      const [
+        patientsRes,
+        remindersRes,
+        alertsRes,
+        culturalRes,
+        familiarRes,
+        cardsRes,
+        attentionRes,
+        patternsRes,
+        trendsRes,
+        doctorsRes,
+        pairingsRes
+      ] = await Promise.allSettled([
+        apiClient.patients.getAll(),
+        apiClient.reminders.getAll(),
+        apiClient.alerts.getAll(),
+        apiClient.content.getCulturalMemories(),
+        apiClient.content.getFamiliarMemories(),
+        apiClient.content.getMemoryCards(),
+        apiClient.content.getAttentionPool(),
+        apiClient.content.getPatterns(),
+        apiClient.content.getTrends(),
+        apiClient.doctors.getAll(),
+        apiClient.pairings.getAll()
+      ]);
+
+      if (patientsRes.status === 'fulfilled' && patientsRes.value.data?.items?.length) {
+        const patients = patientsRes.value.data.items;
+        this.saveAllPatients(patients);
+        const currentActiveId = this.getActivePatientId();
+        const active = patients.find(p => p.id === currentActiveId) || patients[0];
+        if (active) this.savePatient(active);
+      }
+
+      if (remindersRes.status === 'fulfilled' && remindersRes.value.data?.items?.length) {
+        this.saveReminders(remindersRes.value.data.items);
+      }
+
+      if (alertsRes.status === 'fulfilled' && alertsRes.value.data?.items?.length) {
+        this.saveAlerts(alertsRes.value.data.items);
+      }
+
+      if (culturalRes.status === 'fulfilled' && culturalRes.value.data?.items?.length) {
+        this.saveCulturalMemories(culturalRes.value.data.items);
+      }
+
+      if (familiarRes.status === 'fulfilled' && familiarRes.value.data?.items?.length) {
+        this.saveFamiliarMemories(familiarRes.value.data.items);
+      }
+
+      if (cardsRes.status === 'fulfilled' && cardsRes.value.data?.items?.length) {
+        this.saveMemoryCards(cardsRes.value.data.items);
+      }
+
+      if (attentionRes.status === 'fulfilled' && attentionRes.value.data?.items?.length) {
+        this.saveAttentionPool(attentionRes.value.data.items);
+      }
+
+      if (patternsRes.status === 'fulfilled' && patternsRes.value.data?.items?.length) {
+        this.savePatterns(patternsRes.value.data.items);
+      }
+
+      if (trendsRes.status === 'fulfilled' && trendsRes.value.data?.items?.length) {
+        this.saveTrends(trendsRes.value.data.items);
+      }
+
+      if (doctorsRes.status === 'fulfilled' && doctorsRes.value.data?.items?.length) {
+        const docs = doctorsRes.value.data.items;
+        if (docs[0]) this.saveDoctor(docs[0]);
+      }
+
+      if (pairingsRes.status === 'fulfilled' && pairingsRes.value.data?.items?.length) {
+        const items = pairingsRes.value.data.items;
+        const pending = items.filter(i => i.status === 'pending');
+        const approved = items.filter(i => i.status === 'approved');
+        this.savePairingRequests(pending);
+        this.saveLinkedDevices(approved);
+      }
+
+      window.dispatchEvent(new Event('mindora-db-synced'));
+      return true;
+    } catch (e) {
+      console.warn('[StorageService] Background sync from database encountered an issue:', e);
+      return false;
+    }
+  }
+
   // Reset to default demo data
   static resetToDemo(): void {
     if (!this.isBrowser()) return;
@@ -645,3 +840,4 @@ export class StorageService {
     window.dispatchEvent(new Event('mindora-reset-demo'));
   }
 }
+

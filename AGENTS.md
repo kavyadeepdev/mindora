@@ -112,9 +112,16 @@ bun run build
 # Type check all workspaces
 bun run lint
 
-# Database operations (Neon PostgreSQL)
-bun --filter @mindora/backend run db:push     # Push schema changes to Neon
+# Database operations (Neon Cloud or Local Docker PostgreSQL)
+bun run db:docker:up                          # Spin up local PostgreSQL container (port 5433/5432)
+bun run db:docker:down                        # Stop local PostgreSQL container
+bun run db:push                               # Push schema migrations to active database
+bun run db:seed                               # Seed all 12 clinical & cultural CSV datasets
 bun --filter @mindora/backend run db:studio   # Open Drizzle Studio web GUI
+
+# AI Microservice (Python / FastAPI / Scikit-Learn / Groq Nemotron)
+bun run ai:train                              # Train Scikit-Learn models from backend CSVs
+bun run dev:ai                                # Start FastAPI AI microservice on :8000
 
 # Neon Cloud deployment
 neon deploy                                   # Deploy neon.ts policy

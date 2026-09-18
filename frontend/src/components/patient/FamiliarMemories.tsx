@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Volume2, Sparkles, Heart } from 'lucide-react';
 import { Language } from '../../types';
 import { AudioSpeechService } from '../../services/audioSpeech';
+import { StorageService } from '../../services/storage';
+import { apiClient } from '../../services/api';
 import { getTranslation } from '../../utils/translations';
 
 interface FamiliarMemoriesProps {
@@ -94,19 +96,33 @@ const MEMORIES: MemoryItem[] = [
 ];
 
 export const FamiliarMemories: React.FC<FamiliarMemoriesProps> = ({ onBack, language }) => {
+  const [memories, setMemories] = useState<MemoryItem[]>(() => {
+    const cached = StorageService.getFamiliarMemories();
+    return cached.length > 0 ? cached : MEMORIES;
+  });
+
+  useEffect(() => {
+    apiClient.content.getFamiliarMemories().then((res) => {
+      if (res.data?.items && res.data.items.length > 0) {
+        setMemories(res.data.items);
+        StorageService.saveFamiliarMemories(res.data.items);
+      }
+    });
+  }, []);
+
   const getStory = (m: MemoryItem) => {
-    if (language === 'as') return m.storyAssamese;
-    if (language === 'hi') return m.storyHindi;
-    if (language === 'bn') return m.storyBengali;
-    if (language === 'kn') return m.storyKannada;
+    if (language === 'as') return m.storyAssamese || m.story;
+    if (language === 'hi') return m.storyHindi || m.story;
+    if (language === 'bn') return m.storyBengali || m.story;
+    if (language === 'kn') return m.storyKannada || m.story;
     return m.story;
   };
 
   const getTitle = (m: MemoryItem) => {
-    if (language === 'as') return m.titleAssamese;
-    if (language === 'hi') return m.titleHindi;
-    if (language === 'bn') return m.titleBengali;
-    if (language === 'kn') return m.titleKannada;
+    if (language === 'as') return m.titleAssamese || m.title;
+    if (language === 'hi') return m.titleHindi || m.title;
+    if (language === 'bn') return m.titleBengali || m.title;
+    if (language === 'kn') return m.titleKannada || m.title;
     return m.title;
   };
 
@@ -145,7 +161,7 @@ export const FamiliarMemories: React.FC<FamiliarMemoriesProps> = ({ onBack, lang
 
       {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {MEMORIES.map((item) => (
+        {memories.map((item) => (
           <div
             key={item.id}
             className="bg-white border-2 border-stone-200/90 rounded-3xl p-6 shadow-xs hover:border-amber-300 transition flex flex-col justify-between"
