@@ -152,3 +152,31 @@ Mindora provides native localization across 5 Indian languages without bracketed
 - **Kannada (`kn`)** — ಕನ್ನಡ
 
 All UI controls, game scenario prompts, objects, greetings, and reminders dynamically translate when the language toggle is switched.
+
+---
+
+## 8. Left Sidebar Dashboard Layout & Per-Patient Accessibility Governance
+
+Both Doctor and Caretaker portals employ a **Left Sidebar + Right Content Container** layout:
+- **Left Sidebar**:
+  - Doctor / Caregiver Identity Card
+  - Multi-Patient Cohort Switcher with avatars, diagnoses, and dementia stages
+  - Vertical navigation tabs (Regimen, Reminders, Device Pairing, Clinical Telemetry, Accessibility)
+- **Per-Patient Accessibility Governance**:
+  - Elderly dementia patients are spared the cognitive burden of navigating accessibility menus.
+  - Doctors and Caretakers configure font scale (Large Text), contrast theme (High Contrast), speech narration, reduced motion, and native dialect directly per patient.
+  - Changes instantly broadcast to the patient screen over local cache events and WebSocket synchronization.
+
+---
+
+## 9. Duolingo-Style Guided Patient Regimen Path
+
+The patient interface (`PatientHome.tsx`) implements a gamified, supportive **stepping-stone learning path**:
+- **Personalized Greeting**: Spoken warm audio greeting with daily active streak counter and progress bar.
+- **First Task / Immediate Care**: The earliest prescribed morning reminder (medication or hydration) occupies the first stepping stone node, offering a 1-tap "Mark Done & Continue" action.
+- **Sequential Stepping Stones**: Doctor-prescribed exercises appear in exact clinical order as tactile 3D-styled circular buttons:
+  - **Completed**: Emerald/gold with celebratory star badge.
+  - **Active**: Glowing pulse ring with a bouncing *"Start Here"* banner.
+  - **Locked**: Soft muted state indicating upcoming sequence.
+- **Duolingo-Style Sticky Continue Bar**: Fixed bottom action bar displaying the current active task and a prominent *"Continue Journey"* button, guaranteeing dementia patients never get lost or confused.
+

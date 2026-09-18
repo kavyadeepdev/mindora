@@ -144,14 +144,25 @@ export default function App() {
       refreshStorageData();
     };
 
+    const handleAccessibilityUpdate = () => {
+      setAccessibility(StorageService.getAccessibility());
+      const active = StorageService.getActivePatient();
+      setPatient(active);
+      setLanguage(active.language);
+    };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('mindora-adaptive-change', handleAdaptiveChange);
+    window.addEventListener('mindora-accessibility-changed', handleAccessibilityUpdate);
+    window.addEventListener('mindora-patient-changed', handleAccessibilityUpdate);
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('mindora-adaptive-change', handleAdaptiveChange);
+      window.removeEventListener('mindora-accessibility-changed', handleAccessibilityUpdate);
+      window.removeEventListener('mindora-patient-changed', handleAccessibilityUpdate);
     };
   }, []);
 
