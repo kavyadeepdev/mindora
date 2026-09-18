@@ -1,0 +1,46 @@
+id,name,nameAssamese,nameHindi,emoji,color
+1,Red Rose,Golap Lal Phool,लाल गुलाब,🌹,bg-rose-50 border-rose-200
+2,Marigold,Gaphoti Phool,गेंदा,🌼,bg-amber-50 border-amber-200
+3,Gloxinia,Kopou Phool,ग्लोक्सिनिया,🌺,bg-pink-50 border-pink-200
+4,Bamboo Flute,Baah Phulori,बाँसुरी,🎵,bg-emerald-50 border-emerald-200
+5,Tabla,Dhol,तबला,🥁,bg-orange-50 border-orange-200
+6,Sitar,Swarbat,सितार,🎸,bg-purple-50 border-purple-200
+7,Assamese Fish,Baor Maas,मछली,🐟,bg-blue-50 border-blue-200
+8,Bamboo Shoot,Jaol,बाँस का अंकुर,🎋,bg-green-50 border-green-200
+9,Orange,Aam,नारंगी,🍊,bg-orange-50 border-orange-200
+10,Litchi,Lichu,लीची,🫐,bg-red-50 border-red-200
+11,Assamese Temple,Basistha Mandir,मंदिर,🛕,bg-amber-50 border-amber-200
+12,Kamakhya Temple,Kamakhya Mandir,कामाख्या मंदिर,🙏,bg-yellow-50 border-yellow-200
+13,One-Horned Rhino,Gendor Ghurial,गैंडा,🦏,bg-gray-50 border-gray-200
+14,White Elephant,Safa Hati,हाथी,🐘,bg-slate-50 border-slate-200
+15,Peacock,Mayur,मोर,🦚,bg-indigo-50 border-indigo-200
+16,Muga Silk Mekhela Sador,Meka Sador,मेखला साड़,👗,bg-amber-50 border-amber-200
+17,Assamese Gamosa,Gamosa,गमोसा,🧣,bg-red-50 border-red-200
+18,Naga Shawl,Naga Durrie,नागा शॉल,🧣,bg-rose-50 border-rose-200
+19,Tiger,Lanka Bagh,बाघ,🐅,bg-amber-50 border-amber-200
+20,Hornbill Bird,Khuwah Khopa,हॉर्नबिल,🦅,bg-sky-50 border-sky-200
+21,Assamese Boat,Nouka,नाव,⛵,bg-blue-50 border-blue-200
+22,Tea Leaves,Cha Pat,चाय पत्ती,🍃,bg-green-50 border-green-200
+23,Brass Bell,Khol,घंटा,🔔,bg-yellow-50 border-yellow-200
+24,Assamese Pitha,Pitha,पिठा,🫓,bg-orange-50 border-orange-200
+25,Manipur Polo Pony,Sagol,पोलो घोड़ा,🐴,bg-amber-50 border-amber-200
+26,Prayer Wheel,Mani,प्रार्थना चक्र,☸️,bg-purple-50 border-purple-200
+27,Mountain,Agaloi,पहाड़,🏔️,bg-slate-50 border-slate-200
+28,Waterfall,Jharna,झरना,💧,bg-cyan-50 border-cyan-200
+29,Red Panda,Netal Bok,रेड पांडा,🐼,bg-rose-50 border-rose-200
+30,Assamese Jaapi,Jaapi,जापी,🎩,bg-amber-50 border-amber-200
+31,Earthen Lamp,Agbati,दीया,🪔,bg-orange-50 border-orange-200
+32,Mango,Aam,आम,🥭,bg-yellow-50 border-yellow-200
+33,Rice Paddy,Dhaan,धान,🌾,bg-amber-50 border-amber-200
+34,Assamese Drum,Dhol,ढोल,🥁,bg-red-50 border-red-200
+35,Buddha Statue,Buddha Murti,बुद्ध मूर्ति,🪷,bg-indigo-50 border-indigo-200
+36,Butterfly,PoPhuli,तितली,🦋,bg-pink-50 border-pink-200
+37,Cloud,Megh,बादल,☁️,bg-sky-50 border-sky-200
+38,Stars,Tara,तारे,⭐,bg-yellow-50 border-yellow-200
+39,Moon,Chand,चाँद,🌙,bg-indigo-50 border-indigo-200
+40,Sun,Bel,सूरज,☀️,bg-amber-50 border-amber-200
+41,Green Leaf,Sabuj Pat,हरा पत्ता,🌿,bg-green-50 border-green-200
+42,Pine Cone,Soru Saru,पाइन कोन,🌲,bg-emerald-50 border-emerald-200
+43,Assamese Mask,Mukha,मुखौटा,🎭,bg-rose-50 border-rose-200
+44,Bell Metal Gamosa,Kanchan Gamosa,कांस्य गमोसा,✨,bg-yellow-50 border-yellow-200
+45,Cotton Flower,Kapas Phool,कपास फूल,🌸,bg-white-50 border-gray-200

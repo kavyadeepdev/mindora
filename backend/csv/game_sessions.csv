@@ -1,0 +1,45 @@
+id,patientId,gameType,gameTitle,score,accuracy,responseTime,attempts,difficulty,timestamp,dateFormatted,completed,synced,notes
+sess-30,patient-anima-01,memory,Memory Match (Garden Flowers),88,88,4.2,1,3,2026-09-18T10:30:00Z,18 Sep,true,true,Identified Kopou Phool and Tagar with ease.
+sess-29,patient-anima-01,attention,Attention Challenge (Red Objects),74,74,5.1,2,2,2026-09-17T11:15:00Z,17 Sep,true,true,Slight hesitation distinguishing red pitha from orange bowl.
+sess-28,patient-anima-01,pattern,Pattern Recognition (Gamosa Weave),91,91,3.9,1,3,2026-09-16T10:05:00Z,16 Sep,true,true,Recognized floral border sequence immediately.
+sess-27,patient-anima-01,routine,Daily Routine Recall (Morning Steps),82,82,4.8,1,2,2026-09-15T09:45:00Z,15 Sep,true,true,Reconstructed Wakeup -> Water -> Medicine order correctly.
+sess-26,patient-anima-01,memory,Memory Match (Festival Instruments),80,80,4.5,2,2,2026-09-14T10:20:00Z,14 Sep,true,true,Smiled when seeing Bihu Dhol card.
+sess-25,patient-anima-01,attention,Attention Challenge (Tea Leaves),75,75,5.3,2,2,2026-09-13T11:00:00Z,13 Sep,true,true,Good focus under gentle audio prompt.
+sess-24,patient-anima-01,pattern,Pattern Recognition (Traditional Beads),89,89,4.1,1,2,2026-09-12T10:40:00Z,12 Sep,true,true,Completed without reminders.
+sess-23,patient-anima-01,memory,Memory Match (Temple Bell),82,82,4.6,2,2,2026-09-11T10:15:00Z,11 Sep,true,true,Took extra time with the bell metal items but succeeded.
+sess-22,patient-anima-01,routine,Daily Routine Recall (Morning Steps),78,78,5.0,2,2,2026-09-10T09:30:00Z,10 Sep,true,true,Swapped medicine and water order initially but corrected.
+sess-21,patient-anima-01,attention,Attention Challenge (Red Objects),70,70,5.6,3,2,2026-09-09T11:20:00Z,9 Sep,true,true,Tapped yellow marigold by mistake twice. Gentle reminder helped.
+sess-20,patient-anima-01,memory,Memory Match (Garden Flowers),76,76,4.9,2,2,2026-09-08T10:00:00Z,8 Sep,true,true,Needed audio prompt to recall Tagar flower.
+sess-19,patient-anima-01,pattern,Pattern Recognition (Assam Tea),85,85,4.3,1,2,2026-09-07T10:45:00Z,7 Sep,true,true,Strong performance with alternating leaf patterns.
+sess-18,patient-anima-01,routine,Daily Routine Recall (Morning Steps),80,80,4.7,1,2,2026-09-06T09:50:00Z,6 Sep,true,true,Consistent morning routine recall.
+sess-17,patient-anima-01,memory,Memory Match (Tea Set),72,72,5.4,3,2,2026-09-05T10:30:00Z,5 Sep,true,true,Slower day - needed more time with tea garden cards.
+sess-16,patient-anima-01,attention,Attention Challenge (Festival Items),68,68,5.8,3,1,2026-09-04T11:00:00Z,4 Sep,true,true,New difficulty level - getting familiar with larger grid.
+sess-15,patient-anima-01,pattern,Pattern Recognition (Basic Colors),90,90,4.0,1,1,2026-09-03T10:20:00Z,3 Sep,true,true,Basic alternating pattern - excellent response.
+sess-14,patient-anima-01,memory,Memory Match (Assamese Kitchen),78,78,4.8,2,2,2026-09-02T10:10:00Z,2 Sep,true,true,Enjoyed recognizing the kahi-bati card.
+sess-13,patient-anima-01,routine,Daily Routine Recall (Morning Steps),75,75,5.2,2,1,2026-09-01T09:40:00Z,1 Sep,true,true,First routine recall at difficulty 1 - steady start.
+sess-12,patient-anima-01,memory,Memory Match (Festival Items),70,70,5.5,3,1,2026-08-31T10:25:00Z,31 Aug,true,true,Baseline session - establishing starting difficulty.
+sess-11,patient-anima-01,attention,Attention Challenge (Red Objects),65,65,6.0,3,1,2026-08-30T11:10:00Z,30 Aug,true,true,First attention session - learning the interface.
+sess-10,patient-anima-01,memory,Memory Match (Garden Flowers),68,68,5.7,3,1,2026-08-29T10:05:00Z,29 Aug,true,true,Initial baseline memory session. Needed multiple attempts.
+sess-off-1,patient-anima-01,memory,Memory Match (Orchid Garden),85,85,4.4,1,3,2026-09-18T14:30:00Z,18 Sep,true,false,Played during afternoon rest. Offline mode.
+sess-off-2,patient-anima-01,attention,Attention Challenge (Red Items),78,78,4.9,2,2,2026-09-17T15:00:00Z,17 Sep,true,false,Evening session - good focus despite offline.
+sess-off-3,patient-anima-01,routine,Daily Routine Recall (Morning Steps),84,84,4.5,1,2,2026-09-16T14:00:00Z,16 Sep,true,false,Afternoon offline session.
+sess-31,patient-tashi-02,memory,Memory Match (Khasi Fruits),79,79,4.7,2,2,2026-09-18T10:00:00Z,18 Sep,true,true,Recognized Khasi orange and pineapple quickly.
+sess-32,patient-tashi-02,attention,Attention Challenge (Green Objects),72,72,5.2,2,2,2026-09-17T10:30:00Z,17 Sep,true,true,Good focus on green leaf items.
+sess-33,patient-tashi-02,pattern,Pattern Recognition (Root Bridge),81,81,4.4,1,2,2026-09-16T11:00:00Z,16 Sep,true,true,Identified the root bridge pattern sequence.
+sess-34,patient-tashi-02,routine,Daily Routine Recall (Morning Steps),76,76,5.0,2,2,2026-09-15T09:30:00Z,15 Sep,true,true,Mixed up walk and tea time but corrected.
+sess-35,patient-tashi-02,memory,Memory Match (Fishing Items),83,83,4.3,1,2,2026-09-14T10:15:00Z,14 Sep,true,true,Strong performance with fishing net and rod cards.
+sess-36,patient-lalbiak-03,memory,Memory Match (Bamboo Items),85,85,4.2,1,3,2026-09-18T10:15:00Z,18 Sep,true,true,Excellent recall of bamboo craft items.
+sess-37,patient-lalbiak-03,attention,Attention Challenge (Red Objects),77,77,4.8,2,2,2026-09-17T10:45:00Z,17 Sep,true,true,Consistent focus on red festival items.
+sess-38,patient-lalbiak-03,pattern,Pattern Recognition (Puanchei Weave),92,92,3.8,1,3,2026-09-16T10:30:00Z,16 Sep,true,true,Highest pattern score - recognized Mizo textile weave.
+sess-39,patient-lalbiak-03,routine,Daily Routine Recall (Morning Steps),80,80,4.6,1,2,2026-09-15T09:45:00Z,15 Sep,true,true,Perfect medicine and breakfast order.
+sess-40,patient-ibemcha-04,memory,Memory Match (Lotus Garden),82,82,4.5,1,2,2026-09-18T10:30:00Z,18 Sep,true,true,Beautiful lotus cards reminded her of Loktak Lake.
+sess-41,patient-ibemcha-04,attention,Attention Challenge (Red Objects),69,69,5.5,3,2,2026-09-17T11:00:00Z,17 Sep,true,true,Slightly slower today but completed successfully.
+sess-42,patient-ibemcha-04,pattern,Pattern Recognition (Dance Moves),86,86,4.2,1,2,2026-09-16T10:45:00Z,16 Sep,true,true,Connected pattern to Raas Leela dance sequences.
+sess-43,patient-ibemcha-04,routine,Daily Routine Recall (Morning Steps),79,79,4.9,2,2,2026-09-15T09:30:00Z,15 Sep,true,true,Recalled morning steps with gentle prompting.
+sess-44,patient-temjen-05,memory,Memory Match (Naga Shawls),84,84,4.3,1,2,2026-09-18T10:00:00Z,18 Sep,true,true,Recognized distinctive shawl patterns from each tribe.
+sess-45,patient-temjen-05,attention,Attention Challenge (Red Objects),71,71,5.3,2,2,2026-09-17T10:30:00Z,17 Sep,true,true,Good focus on red chili and ribbon items.
+sess-46,patient-temjen-05,pattern,Pattern Recognition (Hornbill Feathers),88,88,4.0,1,3,2026-09-16T11:00:00Z,16 Sep,true,true,Identified feather sequence immediately.
+sess-47,patient-temjen-05,routine,Daily Routine Recall (Morning Steps),77,77,5.1,2,2,2026-09-15T09:45:00Z,15 Sep,true,true,Needed one reminder for medicine timing.
+sess-48,patient-deepa-06,memory,Memory Match (Tripura Palace),81,81,4.6,1,2,2026-09-18T10:15:00Z,18 Sep,true,true,Enjoyed the Neermahal palace cards.
+sess-49,patient-deepa-06,attention,Attention Challenge (Red Objects),73,73,5.0,2,2,2026-09-17T11:15:00Z,17 Sep,true,true,Steady performance with festival items.
+sess-50,patient-deepa-06,pattern,Pattern Recognition (Rice Paddy),87,87,4.1,1,2,2026-09-16T10:30:00Z,16 Sep,true,true,Strong pattern recognition with agricultural motifs.

@@ -1,0 +1,5 @@
+gameType,currentDifficulty,recentAccuracyAverage,lastAdjustedDate,historyExplanation
+memory,3,84,18 Sep,"Baseline set at Level 1 on 29 Aug (68% accuracy). | Promoted to Level 2 on 2 Sep after consistent 76-82% accuracy. | Promoted to Level 3 on 16 Sep after 88% accuracy on Garden Flowers."
+attention,2,74,17 Sep,"Baseline set at Level 1 on 30 Aug (65% accuracy). | Promoted to Level 2 on 9 Sep after reaching 70% consistently. | Maintained at Level 2 - accuracy 74% within comfortable range."
+pattern,3,90,16 Sep,"Baseline set at Level 1 on 3 Sep (90% accuracy - strong start). | Promoted to Level 2 on 7 Sep after 85% accuracy. | Promoted to Level 3 on 16 Sep after 91% on Gamosa weave patterns."
+routine,2,82,15 Sep,"Baseline set at Level 1 on 1 Sep (75% accuracy). | Promoted to Level 2 on 10 Sep after 80% routine recall accuracy. | Maintained at Level 2 for calm unhurried daily reinforcement."

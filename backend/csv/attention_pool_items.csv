@@ -1,0 +1,49 @@
+id,name,emoji,isRed,colorName
+1,Red Rose,Lal Golap, true,Red
+2,Red Hibiscus,Lal Joba, true,Red
+3,Red Chili,Morich, true,Red
+4,Red Lantern,Laltin, true,Red
+5,Red Apple,Sewali, true,Red
+6,Red Kite,Dokhila, true,Red
+7,Red Pencil,Lal Pencil, true,Red
+8,Red Tulip,Lal Tulip, true,Red
+9,Red Mushroom,Lal Khoom, true,Red
+10,Red Star,Lal Tara, true,Red
+11,Green Leaf,Sabuj Pat, false,Green
+12,Bamboo Shoot,Jaol, false,Green
+13,Tea Leaf,Cha Pat, false,Green
+14,Green Parrot,Sijou, false,Green
+15,Frog,Pek, false,Green
+16,Green Mango,Kancha Aam, false,Green
+17,Spinach,Palang Xak, false,Green
+18,Snake,Pep, false,Green
+19,Lizard,Tikhor, false,Green
+20,Green Umbrella,Sabuj Chata, false,Green
+21,Yellow Flower,Phooli, false,Yellow
+22,Banana,Kola, false,Yellow
+23,Butter,Makhon, false,Yellow
+24,Sunflower,Suryamukhi, false,Yellow
+25,Lemon,Nim, false,Yellow
+26,Yellow Taxi,Taxi, false,Yellow
+27,Mango,Aam, false,Yellow
+28,Golden Silk,Muga, false,Yellow
+29,Rice Paddy,Dhaan, false,Yellow
+30,Yellow Umbrella,Pila Chata, false,Yellow
+31,Blue Sky,Akash, false,Blue
+32,Blue River,Nadi, false,Blue
+33,Blue Bird,Pakhi, false,Blue
+34,Blue Whale,Bala Hati, false,Blue
+35,Blue Mountain,B nil, false,Blue
+36,Blue Flower,Neel Phool, false,Blue
+37,Blue Kite,Dokhila Neel, false,Blue
+38,Blue Cloud,Megh, false,Blue
+39,Orange Marigold,Gaphoti, false,Orange
+40,Orange Fruit,Narangi, false,Orange
+41,Orange Butterfly,Phuli, false,Orange
+42,Orange Pumpkin,Ratau, false,Orange
+43,Orange Fish,Horial Maas, false,Orange
+44,Purple Brinjal,Bengena, false,Purple
+45,Purple Grape,Angoor, false,Purple
+46,Purple Flower,Bor Phool, false,Purple
+47,Purple Cloud,Megh Lal, false,Purple
+48,Purple Eggplant,Bengena Lal, false,Purple

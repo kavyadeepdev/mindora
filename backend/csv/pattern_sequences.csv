@@ -1,0 +1,7 @@
+level,sequence,correctNextEmoji,correctNextLabel,optionsEmoji,optionsLabel,patternRule
+1,"🟠,🔵,🟠,🔵",🟠,Orange Circle,"🟠,🔵,🟢","Orange Circle,Blue Circle,Green Circle",Orange Blue alternating rhythm
+2,"🌸,🍃,🌸,🍃",🌸,Kopou Orchid,"🌸,🍃,🍎","Kopou Orchid,Tea Leaf,Apple",Assam Flower Leaf alternating motif
+3,"🧣,🧣,🍵,🧣,🧣",🍵,Tea Cup,"🍵,🧣,🥁","Tea Cup,Gamosa Red,Dhol",Two Gamosas One Tea cup pattern
+4,"🌸,🍃,🍵,🌸,🍃",🍵,Tea Cup,"🍵,🌸,🧣","Tea Cup,Kopou Orchid,Gamosa",Orchid Leaf Cup three-step rhythm
+5,"🥁,🌸,🧣,🌸",🥁,Bihu Dhol,"🥁,🧣,🍃","Bihu Dhol,Gamosa Red,Tea Leaf","Symmetric: Dhol - Flower - Gamosa - Flower - Dhol"
+6,"🎭,🎭,🍵,🧣,🎭,🎭",🍵,Tea Cup,"🍵,🧣,🥁","Tea Cup,Gamosa Red,Bihu Dhol","Two Masks Tea Gamosa Two Masks Tea pattern"

@@ -1,0 +1,42 @@
+id,patientId,type,title,titleAssamese,titleHindi,time,status,notes
+rem-1,patient-anima-01,medicine,Morning Medicine (Blood pressure & vitamins),পুৱাৰ ঔষধ (ৰক্তচাপ আৰু ভিটামিন),सुबह की दवा (ब्लड प्रेशर व विटामिन),9:00 AM,completed,Take with warm water after breakfast
+rem-2,patient-anima-01,hydration,Drink Water (1 full glass),এক গিলাচ বিশুদ্ধ পানী খাবলৈ পাহৰিব নালাগে,एक गिलास ताजा पानी पिएं,10:30 AM,pending,Lukewarm water is prepared in copper jug
+rem-3,patient-anima-01,activity,Morning Courtyard Walk,চোতালত পাতলকৈ খোজ কঢ়ा,आंगन में सुबह की टहल,11:00 AM,pending,Gentle walk around the flowering tulsi plant
+rem-4,patient-anima-01,appointment,Doctor Appointment (Dr. Baruah - Routine Wellness),ডাঃ বৰুৱাৰ সৈতে নিয়মীয়া স্বাস্থ্য পৰীক্ষা,डॉ. बरुआ से नियमित स्वास्थ्य परामर्श,4:30 PM,pending,Civil Hospital OPD accompanied by Meera
+rem-5,patient-anima-01,medicine,Evening Medicine (Calcium & D3),সন্ধিয়াৰ ঔষধ (কেলচিয়াম আৰু D3),शाम की दवा (कैल्शियम व D3),7:00 PM,pending,Take after evening tea with milk
+rem-6,patient-anima-01,hydration,Evening Water & Fruit,সন্ধিয়াৰ পানী আৰু ফল,शाम का पानी और फल,5:30 PM,pending,Seasonal fruit with a glass of water
+rem-7,patient-anima-01,activity,Family Video Call,পৰিয়ালৰ সৈতে ভিডিঅ' कल,परिवार से वीडियो कॉल,6:30 PM,pending,Call son in Bangalore - show garden flowers
+rem-8,patient-anima-01,activity,Evening Light Stretching,সন্ধিয়াৰ হালকা ব্যায়াম,शाम की हल्की स्ट्रेचिंग,5:00 PM,pending,5 minutes of gentle seated stretching
+rem-9,patient-anima-01,appointment,Eye Checkup (Dr. Handique - Next Week),ডাঃ হান্ডিকেৰ সৈতে চকু পৰীক্ষा,डॉ. हांडिके से आँखों की जाँच,10:00 AM,pending,Next Monday - Jorhat Eye Hospital
+rem-10,patient-anima-01,medicine,Morning Ayurvedic Tonic,পুৱাৰ আয়ুৰ্বেদিক টনিক,सुबह की आयुर्वेदिक टॉनिक,7:30 AM,completed,Chyawanprash with warm milk
+rem-extra-1,patient-anima-01,activity,Garden Watering Time,বগিচা পানী দিয়া সময়,बगीचे में पानी देने का समय,7:00 AM,completed,Water the tulsi and marigold plants
+rem-extra-2,patient-anima-01,activity,Afternoon Rest & Prayer,দুপৰীয়া বিশ্ৰাম আৰু প্ৰাৰ্থনা,दोपहर का आराम और प्रार्थना,1:00 PM,completed,30 minutes rest then light prayer
+rem-13,patient-tashi-02,medicine,Morning Blood Pressure Medicine,পুৱাৰ ৰক্তচাপৰ ঔषध,सुबह की ब्लड प्रेशर की दवा,8:00 AM,completed,Take with warm water
+rem-14,patient-tashi-02,hydration,Mid-morning Water,দুপৰীয়াৰ পানী,दोपहर का पानी,10:00 AM,pending,One full glass of water
+rem-15,patient-tashi-02,activity,Walk to Local Market,স্থানীয় বজাৰলৈ খোজ,स्थानीय बाजार में टहल,11:30 AM,pending,Accompanied walk to Police Bazar
+rem-16,patient-tashi-02,medicine,Evening Calcium Tablet,সন্ধিয়াৰ কেলচিয়াম,शाम की कैल्शियम गोली,6:00 PM,pending,Take after evening tea
+rem-17,patient-tashi-02,activity,Fishing Stories Session,মাছ ধৰাৰ কাহিনী,मछली पकड़ने की कहानियाँ,5:00 PM,pending,Share fishing memories with grandson
+rem-18,patient-lalbiak-03,medicine,Morning Diabetes Medicine,পুৱাৰ মধুমেহৰ ঔषध,सुबह की डायबिटीज की दवा,7:30 AM,completed,Take before breakfast
+rem-19,patient-lalbiak-03,hydration,Water with Lemon,লেবুৰ পানী,नींबू पानी,8:00 AM,pending,Warm water with fresh lemon
+rem-20,patient-lalbiak-03,activity,Bamboo Craft Practice,বাঁহৰ শিল্প অনুশীলন,बांस की शिल्प का अभ्यास,10:00 AM,pending,Practice weaving at the veranda
+rem-21,patient-lalbiak-03,appointment,Diabetes Checkup,মধুমেহ পৰীক্ষा,डायबिटीज की जाँच,3:00 PM,pending,Weekly sugar level check
+rem-22,patient-ibemcha-04,medicine,Morning Joint Pain Medicine,পুৱাৰ গাঁঠিৰ বিষৰ ঔषধ,सुबह के जोड़ों के दर्द की दवा,8:30 AM,completed,Take after light breakfast
+rem-23,patient-ibemcha-04,hydration,Herbal Tea Time,ভেষজ চাহৰ সময়,हर्बल चाय का समय,9:00 AM,pending,Ginger tulsi tea prepared
+rem-24,patient-ibemcha-04,activity,Dancing Practice - Raas Leela,ৰাস লীলা নৃত্য অনুশীलন,रास लीला नृत्य का अभ्यास,10:30 AM,pending,Gentle hand movements to devotional songs
+rem-25,patient-ibemcha-04,activity,Lotus Weaving Session,পদ্ম বয়ন অধিবেশন,कमल बुनाई का सत्र,3:00 PM,pending,Continue the lotus pattern weave
+rem-26,patient-temjen-05,medicine,Morning Joint Medicine,পুৱাৰ গাঁঠিৰ ঔষध,सुबह के जोड़ों की दवा,7:00 AM,completed,Take with warm milk
+rem-27,patient-temjen-05,hydration,Butter Tea Time,মাখন চাহৰ সময়,मक्खन चाय का समय,8:00 AM,pending,Traditional Naga butter tea
+rem-28,patient-temjen-05,activity,Traditional Shawl Weaving,পৰম্পৰাগত চাদৰ বয়न,पारंपरिक शॉल बुनाई,10:00 AM,pending,Continue the warrior shawl pattern
+rem-29,patient-temjen-05,activity,Bamboo Shoot Preparation,বাঁহ অঙলি প্ৰস্তুতি,बांस के अंकुर की तैयारी,4:00 PM,pending,Traditional bamboo shoot pickle
+rem-30,patient-deepa-06,medicine,Morning Blood Pressure Medicine,পুৱাৰ ৰক্তচাপৰ ঔषध,सुबह की ब्लड प्रेशर की दवा,8:00 AM,completed,Take after breakfast
+rem-31,patient-deepa-06,hydration,Lemon Honey Water,লেবু মহৰ পানী,नींबू शहद पानी,8:30 AM,pending, Warm water with lemon and honey
+rem-32,patient-deepa-06,activity,Pitha Making Session,পিঠা তৈয়াৰীৰ অধিবেশन,पिठा बनाने का सत्र,10:00 AM,pending,Make traditional Tripura pitha
+rem-33,patient-deepa-06,appointment,Heart Checkup,হৃদয় পৰীক্ষा,दिल की जाँच,3:30 PM,pending,Monthly cardiology visit
+rem-34,patient-gyan-07,medicine,Morning Blood Pressure Medicine,পুৱাৰ ৰক্তচাপৰ ঔষध,सुबह की ब्लड प्रेशर की दवा,7:00 AM,completed,Take with warm water
+rem-35,patient-gyan-07,hydration,Butter Tea,মাখন চাহ,मक्खन चाय,7:30 AM,pending,Tibetan style butter tea
+rem-36,patient-gyan-07,activity,Monastery Prayer Session,মঠৰ প্ৰাৰ্থনা অধিবেশन,मठ की प्रार्थना का सत्र,9:00 AM,pending,Light incense and chant mantras
+rem-37,patient-gyan-07,activity,Orchid Garden Walk,অৰকিড বগিচাত খোজ,ऑर्किड बगीचे में टहल,3:30 PM,pending,Walk through the orchid sanctuary
+rem-38,patient-apsara-08,medicine,Morning Herbal Medicine,পুৱাৰ ভেষজ ঔषধ,सुबह की हर्बल दवा,8:00 AM,completed,Take with warm water
+rem-39,patient-apsara-08,hydration,Bamboo Shoot Water,বাঁহ অঙলিৰ পানী,बांस अंकुर पानी,9:00 AM,pending,Traditional fermented water
+rem-40,patient-apsara-08,activity,Bodo Traditional Dance,বৰো পৰম্পৰাগত নৃत্য,बोड़ो पारंपरिक नृत्य,10:30 AM,pending,Practice Bwisagu dance steps
+rem-41,patient-apsara-08,activity,Aronai Weaving,অৰোনাই বয়न,अरोनाई बुनाई,3:00 PM,pending,Continue the ceremonial scarf

@@ -1,0 +1,24 @@
+id,name,relation,phone,linkedPatientIds
+caregiver-meera-01,Meera Devi,"Daughter & Primary Caregiver","+91 98640 12345","patient-anima-01,patient-geeta-28"
+caregiver-diana-02,Diana Khyriem,Granddaughter & Caregiver,+91 98630 23456,patient-tashi-02
+caregiver-lalrinsi-03,Lalrinsi Hmar,"Daughter & Primary Caregiver","+91 98620 34567",patient-lalbiak-03
+caregiver-nongthombam-04,Nongthombam Birjit,"Son & Primary Caregiver","+91 98610 45678",patient-ibemcha-04
+caregiver-liren-05,Liren Ao,Daughter & Caregiver,+91 98600 56789,patient-temjen-05
+caregiver-arup-06,Arup Chakraborty,"Son & Primary Caregiver","+91 98590 67890",patient-deepa-06
+caregiver-pema-07,Pema Dorjee,Daughter-in-law & Caregiver,+91 98580 78901,patient-gyan-07
+caregiver-basumati-08,Basumati Boro,"Daughter & Primary Caregiver","+91 98570 89012","patient-apsara-08,patient-chandrika-26"
+caregiver-gangaram-09,Gangaram Rabha,"Son & Primary Caregiver","+91 98560 90123","patient-dhanesh-09,patient-sumitra-32"
+caregiver-rituparna-10,Rituparna Saikia,"Daughter & Primary Caregiver","+91 98550 01234","patient-mangali-10,patient-kamala-24,patient-dilip-29"
+caregiver-hemanta-11,Hemanta Kalita,"Son & Primary Caregiver","+91 98540 12345","patient-bishnu-11,patient-mridula-34"
+caregiver-anjali-12,Anjali Nath,"Daughter & Primary Caregiver","+91 98530 23456","patient-jamuna-12,patient-ashok-33"
+caregiver-mou-13,Mou Borah,"Daughter & Primary Caregiver","+91 98520 34567","patient-rupam-13,patient-bhaskar-25"
+caregiver-bijoya-14,Bijoya Mech,"Daughter & Primary Caregiver","+91 98510 45678",patient-lichuma-14
+caregiver-achuma-15,Achuma Boro,"Daughter & Primary Caregiver","+91 98500 56789","patient-horen-15,patient-ramen-31"
+caregiver-subrata-16,Subrata Choudhury,"Son & Primary Caregiver","+91 98490 67890",patient-pabitri-16
+caregiver-mridula-17,Mridula Das,"Daughter & Primary Caregiver","+91 98480 78901",patient-narayan-17
+caregiver-ritika-18,Ritika Boro,"Daughter & Primary Caregiver","+91 98470 89012",patient-savitri-18
+caregiver-bimola-19,Bimola Mech,"Daughter & Primary Caregiver","+91 98460 90123","patient-anil-19,patient-mahendra-27"
+caregiver-dipak-20,Dipak Nath,"Son & Primary Caregiver","+91 98450 01234","patient-urmila-20,patient-jitendra-35"
+caregiver-nirmala-21,Nirmala Sarma,"Daughter & Primary Caregiver","+91 98440 12345",patient-gopal-21
+caregiver-jatin-22,Jatin Kalita,"Son & Primary Caregiver","+91 98430 23456","patient-meenaxi-22,patient-anjali-30"
+caregiver-anjuma-23,Anjuma Hazarika,"Daughter & Primary Caregiver","+91 98420 34567",patient-pradip-23
