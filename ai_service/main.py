@@ -1,5 +1,12 @@
 import os
+import sys
 from typing import Dict, Any, List, Optional
+
+# Ensure ai_service directory is on sys.path regardless of execution working directory
+AI_SERVICE_DIR = os.path.dirname(os.path.abspath(__file__))
+if AI_SERVICE_DIR not in sys.path:
+    sys.path.insert(0, AI_SERVICE_DIR)
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -7,9 +14,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from analyzer import analyzer
-from llm_summary import generate_nemotron_summary, GROQ_MODEL, GROQ_API_KEY
-from train import train_models
+try:
+    from ai_service.analyzer import analyzer
+    from ai_service.llm_summary import generate_nemotron_summary, GROQ_MODEL, GROQ_API_KEY
+    from ai_service.train import train_models
+except ImportError:
+    from analyzer import analyzer
+    from llm_summary import generate_nemotron_summary, GROQ_MODEL, GROQ_API_KEY
+    from train import train_models
+
 
 app = FastAPI(
     title="Mindora AI Microservice",
