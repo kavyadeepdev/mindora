@@ -4,6 +4,7 @@
   "description": "Mindora monorepo",
   "workspaces": [
     "frontend",
+    "backend",
     "packages/*"
   ],
   "scripts": {
@@ -13,7 +14,10 @@
     "clean": "turbo clean",
     "dev:frontend": "turbo dev --filter=@mindora/frontend",
     "build:frontend": "turbo build --filter=@mindora/frontend",
-    "lint:frontend": "turbo lint --filter=@mindora/frontend"
+    "lint:frontend": "turbo lint --filter=@mindora/frontend",
+    "dev:backend": "turbo dev --filter=@mindora/backend",
+    "build:backend": "turbo build --filter=@mindora/backend",
+    "lint:backend": "turbo lint --filter=@mindora/backend"
   },
   "devDependencies": {
     "turbo": "^2.4.4"

@@ -6,10 +6,11 @@ A modern cognitive care and engagement application, organized as a monorepo.
 
 ```text
 mindora/
-├── backend/               # Reserved for the backend service
+├── backend/               # Fastify backend (@mindora/backend) with Better Auth & Neon Postgres
+│   ├── src/               # API routes, Drizzle schemas, auth & database pool
+│   └── package.json       # Backend dependencies & migration scripts
 ├── frontend/              # Web application (@mindora/frontend)
 │   ├── src/               # React application source
-│   ├── server.ts          # Express + Vite server
 │   └── package.json       # Frontend dependencies & scripts
 ├── packages/              # Shared libraries, types, or configurations
 ├── package.json           # Monorepo root configuration & scripts
@@ -36,26 +37,30 @@ bun install
 
 ### Environment Variables
 
-Configure the frontend environment file:
-
+1. **Frontend**:
 ```bash
 cp frontend/.env.example frontend/.env.local
 ```
 
-Set `GEMINI_API_KEY` in `frontend/.env.local` to your Gemini API key.
+2. **Backend**:
+```bash
+cp backend/.env.example backend/.env
+```
+Provide your Neon connection string (`DATABASE_URL`) and `BETTER_AUTH_SECRET`.
 
 ### Development
 
-Run all development servers:
+Run all development servers (frontend + backend) in parallel:
 
 ```bash
 bun run dev
 ```
 
-Or run frontend directly:
+Or run individual workspaces:
 
 ```bash
-bun run dev:frontend
+bun run dev:frontend    # Starts frontend on port 3000
+bun run dev:backend     # Starts Fastify backend on port 4000
 ```
 
 ### Build
@@ -66,10 +71,11 @@ Build all workspaces:
 bun run build
 ```
 
-Or build frontend specifically:
+Or build individually:
 
 ```bash
 bun run build:frontend
+bun run build:backend
 ```
 
 ### Type Checking & Linting
@@ -80,13 +86,27 @@ Type check all workspaces:
 bun run lint
 ```
 
-## Adding the Backend
+### Database Migrations
 
-When you are ready to add the backend service into `backend/`:
+Push schema to Neon PostgreSQL:
 
-1. Place your backend code inside the [backend/](backend/) directory.
-2. If it is a Node/TypeScript service:
-   - Include a `package.json` inside `backend/` (e.g. `"name": "@mindora/backend"`).
-   - Add `"backend"` into the `workspaces` array in [package.json](package.json) and [pnpm-workspace.yaml](pnpm-workspace.yaml).
-   - Run `bun install`.
-3. If it is a Python or Go service, maintain its environment/dependencies inside `backend/` and optionally add proxying in `frontend/vite.config.ts`.
+```bash
+bun --filter @mindora/backend run db:push
+```
+
+Or generate and run migrations:
+
+```bash
+bun --filter @mindora/backend run db:generate
+bun --filter @mindora/backend run db:migrate
+```
+
+Launch Drizzle Studio:
+
+```bash
+bun --filter @mindora/backend run db:studio
+```
+
+## AI Recommendation Service (FastAPI)
+
+The backend is pre-configured to connect to an upcoming FastAPI recommendation service via `FASTAPI_SERVICE_URL` in `backend/.env`. When online, `/api/ai/recommendation` automatically proxies to FastAPI; if unavailable, a gentle cultural fallback engine serves personalized activities.
