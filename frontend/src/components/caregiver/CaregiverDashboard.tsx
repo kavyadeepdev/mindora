@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ResponsiveContainer, 
   LineChart, 
@@ -28,12 +28,31 @@ import {
   HelpCircle,
   Pill,
   Droplet,
-  Heart
+  Heart,
+  Smartphone,
+  Sliders,
+  Check,
+  Type,
+  Contrast,
+  Volume2,
+  Eye,
+  ChevronRight,
+  Users,
+  Save
 } from 'lucide-react';
-import { PatientProfile, CaregiverProfile, GameSession, Reminder, AlertItem, Language } from '../../types';
+import { 
+  PatientProfile, 
+  CaregiverProfile, 
+  GameSession, 
+  Reminder, 
+  AlertItem, 
+  Language,
+  AccessibilitySettings 
+} from '../../types';
 import { StorageService } from '../../services/storage';
 import { GeminiClientService, CaregiverAiSummary } from '../../services/geminiClient';
 import { MOCK_PERFORMANCE_TRENDS } from '../../data/mockData';
+import { getTranslation } from '../../utils/translations';
 
 interface CaregiverDashboardProps {
   patient: PatientProfile;
@@ -47,6 +66,8 @@ interface CaregiverDashboardProps {
   onSync: () => void;
   isSyncing: boolean;
   language: Language;
+  patients?: PatientProfile[];
+  onSelectPatient?: (patientId: string) => void;
 }
 
 export const CaregiverDashboard: React.FC<CaregiverDashboardProps> = ({
@@ -60,18 +81,81 @@ export const CaregiverDashboard: React.FC<CaregiverDashboardProps> = ({
   onAddReminder,
   onSync,
   isSyncing,
-  language
+  language,
+  patients = [],
+  onSelectPatient
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'history' | 'reminders' | 'adaptive'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'history' | 'reminders' | 'adaptive' | 'devices' | 'regimen' | 'accessibility'>('overview');
   const [aiSummary, setAiSummary] = useState<CaregiverAiSummary | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [showAddReminderModal, setShowAddReminderModal] = useState(false);
+  const [pendingPairRequests, setPendingPairRequests] = useState(() => StorageService.getPairingRequests());
+  const [linkedDevices, setLinkedDevices] = useState(() => StorageService.getLinkedDevices());
+  const doctorPlan = StorageService.getActivityPlan(patient.id);
+
+  // Per-Patient Accessibility State
+  const [patientAccessibility, setPatientAccessibility] = useState<AccessibilitySettings>(() => 
+    StorageService.getPatientAccessibility(patient.id)
+  );
+  const [patientLanguage, setPatientLanguage] = useState<Language>(patient.language);
+  const [accessSavedSuccess, setAccessSavedSuccess] = useState(false);
+
+  useEffect(() => {
+    setPatientAccessibility(StorageService.getPatientAccessibility(patient.id));
+    setPatientLanguage(patient.language);
+  }, [patient.id]);
+
+  // Handle saving patient accessibility
+  const handleSaveAccessibility = () => {
+    StorageService.savePatientAccessibility(patient.id, patientAccessibility);
+    if (patientLanguage !== patient.language) {
+      const updated = { ...patient, language: patientLanguage, accessibility: patientAccessibility };
+      StorageService.savePatient(updated);
+      const all = StorageService.getAllPatients().map(p => p.id === patient.id ? updated : p);
+      StorageService.saveAllPatients(all);
+    }
+    setAccessSavedSuccess(true);
+    setTimeout(() => setAccessSavedSuccess(false), 3000);
+  };
 
   // New reminder form state
   const [newTitle, setNewTitle] = useState('');
   const [newTime, setNewTime] = useState('14:00');
   const [newType, setNewType] = useState<'medicine' | 'hydration' | 'activity' | 'appointment'>('medicine');
   const [newNotes, setNewNotes] = useState('');
+
+  // Handle device approval
+  const handleApprovePairing = (requestId: string) => {
+    StorageService.approveDevicePairingRequest(requestId, patient.id, caregiver.name);
+    setPendingPairRequests(StorageService.getPairingRequests());
+    setLinkedDevices(StorageService.getLinkedDevices());
+  };
+
+  const handleRejectPairing = (requestId: string) => {
+    StorageService.rejectDevicePairingRequest(requestId);
+    setPendingPairRequests(StorageService.getPairingRequests());
+  };
+
+  const handleRevokeDevice = (deviceId: string) => {
+    StorageService.revokeLinkedDevice(deviceId);
+    setLinkedDevices(StorageService.getLinkedDevices());
+  };
+
+  const getReminderTitle = (r: Reminder) => {
+    if (language === 'as' && r.titleAssamese) return r.titleAssamese;
+    if (language === 'hi' && r.titleHindi) return r.titleHindi;
+    if (language === 'bn' && r.titleBengali) return r.titleBengali;
+    if (language === 'kn' && r.titleKannada) return r.titleKannada;
+    return r.title;
+  };
+
+  const getReminderNotes = (r: Reminder) => {
+    if (language === 'as' && r.notesAssamese) return r.notesAssamese;
+    if (language === 'hi' && r.notesHindi) return r.notesHindi;
+    if (language === 'bn' && r.notesBengali) return r.notesBengali;
+    if (language === 'kn' && r.notesKannada) return r.notesKannada;
+    return r.notes || '';
+  };
 
   const handleGenerateSummary = async () => {
     setLoadingSummary(true);
@@ -105,671 +189,984 @@ export const CaregiverDashboard: React.FC<CaregiverDashboardProps> = ({
   const pendingSyncSessions = sessions.filter(s => !s.synced);
   const latestSession = sessions[0];
   const adaptiveStates = StorageService.getAdaptiveStates();
+  const activeLinkedScreens = linkedDevices.filter(d => d.patientId === patient.id).length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
-      {/* Top Header & Patient Overview Card */}
-      <div className="bg-white border border-stone-200 rounded-3xl p-6 sm:p-8 shadow-xs mb-8">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-stone-100">
-          <div className="flex items-start sm:items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 text-2xl font-bold shadow-inner shrink-0">
-              AD
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 font-['Outfit']">
-                  {patient.name}
-                </h1>
-                <span className="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
-                  Age {patient.age} • {patient.location}
-                </span>
-                <span className="text-xs font-semibold text-stone-600 bg-stone-100 px-2.5 py-0.5 rounded-full">
-                  Primary: {patient.language}
-                </span>
-              </div>
-              <p className="text-stone-500 text-sm mt-1">
-                Supervised by <strong className="text-stone-800 font-semibold">{caregiver.name}</strong> ({caregiver.relation}) • {caregiver.phone}
-              </p>
-            </div>
-          </div>
-
-          {/* Sync & Connectivity Quick Status */}
-          <div className="flex items-center gap-3">
-            {isOffline ? (
-              <div className="px-4 py-2.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold flex items-center gap-2">
-                <WifiOff className="w-4 h-4 text-amber-600 animate-pulse" />
-                <div>
-                  <div>Local Storage Mode</div>
-                  <div className="text-[10px] font-normal text-amber-700">
-                    {pendingSyncSessions.length} session{pendingSyncSessions.length === 1 ? '' : 's'} queued to sync
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <button
-                id="caregiver-sync-now-btn"
-                onClick={onSync}
-                className="px-4 py-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2 hover:bg-emerald-100 transition cursor-pointer"
-              >
-                <RefreshCw className={`w-4 h-4 text-emerald-600 ${isSyncing ? 'animate-spin' : ''}`} />
-                <div>
-                  <div>{pendingSyncSessions.length > 0 ? `Sync ${pendingSyncSessions.length} Session(s)` : 'All Data Synced'}</div>
-                  <div className="text-[10px] font-normal text-emerald-700">Central Health Cloud</div>
-                </div>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* 5 High-Level Summary Metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 pt-6">
-          <div className="bg-stone-50 border border-stone-200/80 rounded-2xl p-4">
-            <span className="text-xs font-medium text-stone-500">Today's Activities</span>
-            <div className="text-2xl font-black text-stone-900 mt-1">1 / 4</div>
-            <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1 mt-0.5">
-              <CheckCircle2 className="w-3 h-3" /> Memory Completed
-            </span>
-          </div>
-
-          <div className="bg-stone-50 border border-stone-200/80 rounded-2xl p-4">
-            <span className="text-xs font-medium text-stone-500">Memory Accuracy</span>
-            <div className="text-2xl font-black text-stone-900 mt-1">88%</div>
-            <span className="text-[11px] text-stone-500 font-medium mt-0.5">
-              +4% vs last week avg
-            </span>
-          </div>
-
-          <div className="bg-stone-50 border border-stone-200/80 rounded-2xl p-4">
-            <span className="text-xs font-medium text-stone-500">Avg Response Time</span>
-            <div className="text-2xl font-black text-stone-900 mt-1">4.2s</div>
-            <span className="text-[11px] text-stone-500 font-medium mt-0.5">
-              Steady & comfortable
-            </span>
-          </div>
-
-          <div className="bg-stone-50 border border-stone-200/80 rounded-2xl p-4">
-            <span className="text-xs font-medium text-stone-500">Engagement</span>
-            <div className="text-2xl font-black text-amber-700 mt-1">High</div>
-            <span className="text-[11px] text-amber-800 font-medium mt-0.5">
-              Calm participation
-            </span>
-          </div>
-
-          <div className="bg-stone-50 border border-stone-200/80 rounded-2xl p-4 col-span-2 sm:col-span-1">
-            <span className="text-xs font-medium text-stone-500">Routine Completion</span>
-            <div className="text-2xl font-black text-emerald-700 mt-1">85%</div>
-            <span className="text-[11px] text-emerald-800 font-medium mt-0.5">
-              Morning reminders kept
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-stone-200 mb-8 overflow-x-auto pb-1">
-        <button
-          id="tab-overview"
-          onClick={() => setActiveTab('overview')}
-          className={`px-4 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-2 ${
-            activeTab === 'overview'
-              ? 'border-amber-600 text-amber-800'
-              : 'border-transparent text-stone-500 hover:text-stone-900'
-          }`}
-        >
-          <Activity className="w-4 h-4" />
-          <span>Overview & Observations</span>
-        </button>
-
-        <button
-          id="tab-trends"
-          onClick={() => setActiveTab('trends')}
-          className={`px-4 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-2 ${
-            activeTab === 'trends'
-              ? 'border-amber-600 text-amber-800'
-              : 'border-transparent text-stone-500 hover:text-stone-900'
-          }`}
-        >
-          <TrendingUp className="w-4 h-4" />
-          <span>7-Day Performance Trends</span>
-        </button>
-
-        <button
-          id="tab-history"
-          onClick={() => setActiveTab('history')}
-          className={`px-4 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-2 ${
-            activeTab === 'history'
-              ? 'border-amber-600 text-amber-800'
-              : 'border-transparent text-stone-500 hover:text-stone-900'
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          <span>Activity History ({sessions.length})</span>
-        </button>
-
-        <button
-          id="tab-reminders"
-          onClick={() => setActiveTab('reminders')}
-          className={`px-4 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-2 ${
-            activeTab === 'reminders'
-              ? 'border-amber-600 text-amber-800'
-              : 'border-transparent text-stone-500 hover:text-stone-900'
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          <span>Manage Reminders ({reminders.length})</span>
-        </button>
-
-        <button
-          id="tab-adaptive"
-          onClick={() => setActiveTab('adaptive')}
-          className={`px-4 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-2 ${
-            activeTab === 'adaptive'
-              ? 'border-amber-600 text-amber-800'
-              : 'border-transparent text-stone-500 hover:text-stone-900'
-          }`}
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>Adaptive Engine Rules</span>
-        </button>
-      </div>
-
-      {/* TAB 1: OVERVIEW & AI OBSERVATIONS */}
-      {activeTab === 'overview' && (
-        <div className="space-y-8">
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        
+        {/* =========================================================================
+            LEFT SIDEBAR: Caregiver Info, Patient Picker, & Vertical Navigation Tabs
+           ========================================================================= */}
+        <aside className="w-full lg:w-80 shrink-0 space-y-6">
           
-          {/* AI Caregiver Summary Card */}
-          <div className="bg-gradient-to-r from-amber-50/80 via-white to-stone-50 border-2 border-amber-200/90 rounded-3xl p-6 sm:p-8 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-amber-200/60">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 shadow-xs">
-                  <Sparkles className="w-5 h-5 text-amber-700" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-stone-900 font-['Outfit']">
-                    Caregiver Clinical Observation Summary
-                  </h2>
-                  <p className="text-xs text-stone-500">
-                    Natural language interpretation of activity trends & routine adherence
-                  </p>
-                </div>
+          {/* Caregiver Info Card */}
+          <div className="bg-white border border-stone-200 rounded-3xl p-5 shadow-xs">
+            <div className="flex items-center gap-3.5 pb-4 border-b border-stone-100">
+              <div className="w-12 h-12 rounded-2xl bg-amber-600/10 border border-amber-600/20 flex items-center justify-center text-amber-800 text-xl font-bold shadow-xs shrink-0">
+                <ShieldCheck className="w-6 h-6 text-amber-700" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-base font-extrabold text-stone-900 font-['Outfit'] truncate">
+                  {caregiver.name}
+                </h2>
+                <span className="inline-block text-[10px] font-bold text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full mt-0.5">
+                  {caregiver.relation}
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-stone-500 mt-3 leading-relaxed">
+              Contact: {caregiver.phone}
+            </p>
+          </div>
+
+          {/* Patient Selector / Cohort Switcher */}
+          {patients.length > 0 && onSelectPatient && (
+            <div className="bg-white border border-stone-200 rounded-3xl p-5 shadow-xs">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-amber-600" />
+                  Select Patient ({patients.length})
+                </span>
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                  Active Patient
+                </span>
               </div>
 
-              <button
-                id="caregiver-generate-ai-summary-btn"
-                onClick={handleGenerateSummary}
-                disabled={loadingSummary}
-                className="px-4 py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
-              >
-                <Sparkles className={`w-3.5 h-3.5 ${loadingSummary ? 'animate-spin' : ''}`} />
-                <span>{loadingSummary ? 'Synthesizing...' : 'Refresh AI Observation'}</span>
-              </button>
+              <div className="space-y-2">
+                {patients.map((p) => {
+                  const isSelected = p.id === patient.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => onSelectPatient(p.id)}
+                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center gap-3 cursor-pointer ${
+                        isSelected
+                          ? 'bg-amber-50/80 border-amber-500 shadow-xs'
+                          : 'bg-stone-50 border-stone-200/80 hover:bg-stone-100 hover:border-stone-300'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                        isSelected 
+                          ? 'bg-amber-600 text-white shadow-xs' 
+                          : 'bg-stone-200 text-stone-700'
+                      }`}>
+                        {p.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-extrabold text-xs text-stone-900 truncate">
+                            {p.name}
+                          </h4>
+                          {isSelected && (
+                            <span className="w-2 h-2 rounded-full bg-amber-600 shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-[11px] text-stone-500 truncate mt-0.5">
+                          {p.age}y • {p.stage || 'Cognitive Care'}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Left Vertical Navigation Tabs */}
+          <div className="bg-white border border-stone-200 rounded-3xl p-3 shadow-xs space-y-1">
+            <span className="px-3 pt-2 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-stone-400 block">
+              Caregiver Navigation
+            </span>
+
+            <button
+              id="tab-overview"
+              onClick={() => setActiveTab('overview')}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                activeTab === 'overview'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Activity className="w-4 h-4" />
+                <span>Daily Routine & Overview</span>
+              </div>
+              <ChevronRight className={`w-4 h-4 ${activeTab === 'overview' ? 'text-white' : 'text-stone-400'}`} />
+            </button>
+
+            <button
+              id="tab-reminders"
+              onClick={() => setActiveTab('reminders')}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                activeTab === 'reminders'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Calendar className="w-4 h-4" />
+                <span>Daily Reminders</span>
+              </div>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'reminders' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600'
+              }`}>
+                {reminders.length}
+              </span>
+            </button>
+
+            <button
+              id="tab-trends"
+              onClick={() => setActiveTab('trends')}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                activeTab === 'trends'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <TrendingUp className="w-4 h-4" />
+                <span>7-Day Trends</span>
+              </div>
+              <ChevronRight className={`w-4 h-4 ${activeTab === 'trends' ? 'text-white' : 'text-stone-400'}`} />
+            </button>
+
+            <button
+              id="tab-history"
+              onClick={() => setActiveTab('history')}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                activeTab === 'history'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <FileText className="w-4 h-4" />
+                <span>Activity History</span>
+              </div>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'history' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600'
+              }`}>
+                {sessions.length}
+              </span>
+            </button>
+
+            <button
+              id="tab-devices"
+              onClick={() => setActiveTab('devices')}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                activeTab === 'devices'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Smartphone className="w-4 h-4" />
+                <span>Device Pairing</span>
+              </div>
+              {pendingPairRequests.length > 0 && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-500 text-white animate-pulse">
+                  {pendingPairRequests.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              id="tab-regimen"
+              onClick={() => setActiveTab('regimen')}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                activeTab === 'regimen'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Sliders className="w-4 h-4" />
+                <span>Doctor's Regimen</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                Dr. Plan
+              </span>
+            </button>
+
+            <button
+              id="tab-adaptive"
+              onClick={() => setActiveTab('adaptive')}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                activeTab === 'adaptive'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="w-4 h-4" />
+                <span>Adaptive Rules</span>
+              </div>
+              <ChevronRight className={`w-4 h-4 ${activeTab === 'adaptive' ? 'text-white' : 'text-stone-400'}`} />
+            </button>
+
+            <button
+              id="tab-accessibility"
+              onClick={() => setActiveTab('accessibility')}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                activeTab === 'accessibility'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Type className="w-4 h-4" />
+                <span>Patient Accessibility</span>
+              </div>
+              <ChevronRight className={`w-4 h-4 ${activeTab === 'accessibility' ? 'text-white' : 'text-stone-400'}`} />
+            </button>
+          </div>
+
+        </aside>
+
+        {/* =========================================================================
+            RIGHT CONTAINER: Active Tab Content
+           ========================================================================= */}
+        <main className="flex-1 min-w-0 w-full space-y-6">
+          
+          {/* Active Patient Top Banner & Cloud Sync */}
+          <div className="bg-white border border-stone-200 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-black text-base shadow-xs shrink-0">
+                {patient.name.split(' ').map(n => n[0]).join('')}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-xl font-black text-stone-900 font-['Outfit']">
+                    {patient.name}
+                  </h2>
+                  <span className="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                    {patient.age}y • {patient.location}
+                  </span>
+                  <span className="text-xs font-bold text-teal-900 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-full">
+                    {patient.stage || 'Stage 3 MCI'}
+                  </span>
+                </div>
+                <p className="text-xs text-stone-500 mt-1">
+                  Assigned Clinician: <strong className="text-stone-700">Dr. Debojit Sarma</strong> • Primary Dialect: <span className="uppercase font-semibold">{patient.language}</span>
+                </p>
+              </div>
             </div>
 
-            <div className="pt-4">
-              {aiSummary ? (
-                <div className="space-y-3">
-                  <p className="text-stone-800 text-sm leading-relaxed font-medium">
-                    {aiSummary.summary}
-                  </p>
-                  <ul className="space-y-1.5 pt-2">
-                    {aiSummary.observationBulletPoints.map((b, idx) => (
-                      <li key={idx} className="text-xs text-stone-600 flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-600 shrink-0 mt-1.5" />
-                        <span>{b}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {aiSummary.isAiGenerated && (
-                    <div className="text-[10px] text-amber-800 font-semibold bg-amber-100/60 px-2 py-0.5 rounded-md inline-block mt-2">
-                      Generated by Gemini 2.5 • Verified with local rule bounds
-                    </div>
-                  )}
+            {/* Sync & Screen Status */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${
+                activeLinkedScreens > 0
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  : 'bg-stone-50 text-stone-600 border-stone-200'
+              }`}>
+                <Smartphone className="w-3.5 h-3.5" />
+                {activeLinkedScreens > 0 ? `${activeLinkedScreens} Screen Active` : 'No Screen Linked'}
+              </span>
+
+              {isOffline ? (
+                <div className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold flex items-center gap-1.5">
+                  <WifiOff className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                  <span>Offline ({pendingSyncSessions.length} queued)</span>
                 </div>
               ) : (
-                <div className="text-stone-700 text-sm leading-relaxed">
-                  <p className="mb-2">
-                    Anima Devi maintained regular participation in scheduled morning cognitive activities over the past 7 days. Response times remained comfortable (average 4.2 seconds), and routine recall demonstrated high familiarity with morning hydration and medication cues.
-                  </p>
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    <span className="text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg">
-                      ✓ Consistent morning participation
-                    </span>
-                    <span className="text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-lg">
-                      ✓ Memory accuracy maintained above 80%
-                    </span>
-                    <span className="text-xs font-semibold bg-stone-100 text-stone-700 border border-stone-200 px-2.5 py-1 rounded-lg">
-                      ✓ Unhurried, calm response pacing
-                    </span>
-                  </div>
-                </div>
+                <button
+                  onClick={onSync}
+                  className="px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-100 transition cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <span>{pendingSyncSessions.length > 0 ? `Sync ${pendingSyncSessions.length}` : 'Synced'}</span>
+                </button>
               )}
             </div>
           </div>
 
-          {/* Alerts & Observations Box */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border border-stone-200 rounded-3xl p-6 shadow-xs">
-              <h3 className="text-base font-bold text-stone-900 mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
-                <span>Behavioral & Routine Observations</span>
-              </h3>
-              <div className="space-y-3">
-                {alerts.map((al) => (
-                  <div
-                    key={al.id}
-                    className={`p-4 rounded-2xl border text-xs leading-relaxed ${
-                      al.type === 'warning'
-                        ? 'bg-amber-50/60 border-amber-200 text-amber-950'
-                        : al.type === 'info'
-                        ? 'bg-sky-50/60 border-sky-200 text-sky-950'
-                        : 'bg-stone-50 border-stone-200 text-stone-800'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between font-bold mb-1">
-                      <span>{al.title}</span>
-                      <span className="text-[10px] opacity-75">{al.timestamp}</span>
-                    </div>
-                    <p>{al.message}</p>
-                  </div>
-                ))}
+          {/* Quick Metrics Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
+              <span className="text-xs font-medium text-stone-500">Activities Completed</span>
+              <div className="text-2xl font-black text-stone-900 mt-1">{sessions.length}</div>
+              <span className="text-[11px] text-emerald-700 font-semibold mt-0.5 block">
+                Prescribed by Doctor
+              </span>
+            </div>
+
+            <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
+              <span className="text-xs font-medium text-stone-500">Average Accuracy</span>
+              <div className="text-2xl font-black text-stone-900 mt-1">
+                {sessions.length > 0 ? Math.round(sessions.reduce((acc, s) => acc + s.accuracy, 0) / sessions.length) : 88}%
               </div>
+              <span className="text-[11px] text-stone-500 font-medium mt-0.5 block">
+                Steady cognitive pacing
+              </span>
             </div>
 
-            {/* Quick Adaptive Levels Card */}
-            <div className="bg-white border border-stone-200 rounded-3xl p-6 shadow-xs">
-              <h3 className="text-base font-bold text-stone-900 mb-4 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-600" />
-                <span>Current Adaptive Levels</span>
-              </h3>
-              <div className="space-y-3">
-                {Object.values(adaptiveStates).map((st) => (
-                  <div
-                    key={st.gameType}
-                    className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="font-bold text-xs uppercase tracking-wider text-stone-700">
-                        {st.gameType}
-                      </div>
-                      <div className="text-[11px] text-stone-500">
-                        Rolling Accuracy: <strong>{st.recentAccuracyAverage}%</strong> (Level {st.currentDifficulty})
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black bg-amber-100 text-amber-900 px-3 py-1 rounded-xl border border-amber-200">
-                        Level {st.currentDifficulty} / 5
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-[11px] text-stone-500 mt-4 leading-relaxed">
-                *Difficulty adjusts automatically: promotes when accuracy ≥85%, lowers when ≤55% over 3 sessions.
-              </p>
+            <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
+              <span className="text-xs font-medium text-stone-500">Active Reminders</span>
+              <div className="text-2xl font-black text-amber-700 mt-1">{reminders.length}</div>
+              <span className="text-[11px] text-amber-800 font-medium mt-0.5 block">
+                Meds & Hydration
+              </span>
+            </div>
+
+            <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
+              <span className="text-xs font-medium text-stone-500">Comfort & Engagement</span>
+              <div className="text-2xl font-black text-emerald-700 mt-1">High</div>
+              <span className="text-[11px] text-emerald-800 font-medium mt-0.5 block">
+                Calm and reassured
+              </span>
             </div>
           </div>
 
-        </div>
-      )}
-
-      {/* TAB 2: 7-DAY PERFORMANCE TRENDS */}
-      {activeTab === 'trends' && (
-        <div className="space-y-8">
-          
-          {/* Explicit Positioning Notice for Evaluators */}
-          <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 text-xs text-amber-950 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-amber-700 shrink-0" />
-            <div>
-              <strong className="font-bold">Medical Positioning Notice:</strong> This chart tracks engagement and activity performance metrics over time. It does <em>not</em> represent medical dementia staging or clinical diagnosis.
-            </div>
-          </div>
-
-          {/* Accuracy % Trend Chart */}
-          <div className="bg-white border border-stone-200 rounded-3xl p-6 shadow-xs">
-            <div className="mb-4">
-              <h3 className="text-base font-bold text-stone-900">
-                7-Day Activity Accuracy Trend (%)
-              </h3>
-              <p className="text-xs text-stone-500">
-                Shows rolling accuracy percentage across daily cognitive activities.
-              </p>
-            </div>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={MOCK_PERFORMANCE_TRENDS} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
-                  <XAxis dataKey="day" stroke="#78716c" fontSize={12} />
-                  <YAxis domain={[50, 100]} stroke="#78716c" fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e7e5e4' }}
-                    formatter={(value: any) => [`${value}%`, 'Accuracy']}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="accuracy" 
-                    stroke="#d97706" 
-                    strokeWidth={3} 
-                    dot={{ fill: '#d97706', r: 5 }} 
-                    activeDot={{ r: 7 }} 
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Response Time Trend Chart */}
-          <div className="bg-white border border-stone-200 rounded-3xl p-6 shadow-xs">
-            <div className="mb-4">
-              <h3 className="text-base font-bold text-stone-900">
-                7-Day Average Response Time (Seconds)
-              </h3>
-              <p className="text-xs text-stone-500">
-                Unhurried response pace provides insight into cognitive comfort and focus.
-              </p>
-            </div>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={MOCK_PERFORMANCE_TRENDS} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
-                  <XAxis dataKey="day" stroke="#78716c" fontSize={12} />
-                  <YAxis domain={[0, 8]} stroke="#78716c" fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e7e5e4' }}
-                    formatter={(value: any) => [`${value}s`, 'Avg Time']}
-                  />
-                  <Bar dataKey="responseTime" fill="#0284c7" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-        </div>
-      )}
-
-      {/* TAB 3: ACTIVITY HISTORY TABLE */}
-      {activeTab === 'history' && (
-        <div className="bg-white border border-stone-200 rounded-3xl p-6 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-bold text-stone-900">
-                Detailed Activity Session Logs
-              </h3>
-              <p className="text-xs text-stone-500">
-                Raw session metrics, difficulty level, sync status, and caregiver notes.
-              </p>
-            </div>
-            <span className="text-xs font-semibold text-stone-600 bg-stone-100 px-3 py-1 rounded-full">
-              {sessions.length} Recorded Sessions
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-stone-50 text-stone-600 border-b border-stone-200 font-semibold uppercase tracking-wider">
-                <tr>
-                  <th className="py-3 px-3">Date</th>
-                  <th className="py-3 px-3">Activity</th>
-                  <th className="py-3 px-3">Accuracy</th>
-                  <th className="py-3 px-3">Response</th>
-                  <th className="py-3 px-3">Difficulty</th>
-                  <th className="py-3 px-3">Score</th>
-                  <th className="py-3 px-3">Sync Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100 text-stone-800 font-medium">
-                {sessions.map((s) => (
-                  <tr key={s.id} className="hover:bg-stone-50/60 transition">
-                    <td className="py-3.5 px-3 font-semibold text-stone-900">{s.dateFormatted}</td>
-                    <td className="py-3.5 px-3">
-                      <div>{s.gameTitle}</div>
-                      {s.notes && <div className="text-[10px] text-stone-400">{s.notes}</div>}
-                    </td>
-                    <td className="py-3.5 px-3">
-                      <span className={`px-2 py-0.5 rounded-full font-bold ${
-                        s.accuracy >= 80 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {s.accuracy}%
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-3">{s.responseTime}s</td>
-                    <td className="py-3.5 px-3">Level {s.difficulty}</td>
-                    <td className="py-3.5 px-3 font-bold text-stone-900">{s.score}</td>
-                    <td className="py-3.5 px-3">
-                      {s.synced ? (
-                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 w-fit">
-                          <CheckCircle2 className="w-3 h-3" /> Synced
-                        </span>
-                      ) : (
-                        <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 w-fit">
-                          <WifiOff className="w-3 h-3" /> Queued
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: REMINDERS MANAGEMENT */}
-      {activeTab === 'reminders' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-bold text-stone-900 font-['Outfit']">
-                Anima's Daily Schedule & Medication Reminders
-              </h3>
-              <p className="text-xs text-stone-500">
-                Caregiver configured reminders with audio prompts for elderly routine comfort.
-              </p>
-            </div>
-            <button
-              id="caregiver-add-reminder-trigger-btn"
-              onClick={() => setShowAddReminderModal(true)}
-              className="px-4 py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add New Reminder</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {reminders.map((rem) => {
-              const isDone = rem.status === 'completed';
-              return (
-                <div
-                  key={rem.id}
-                  className={`p-5 rounded-3xl border-2 transition shadow-xs flex items-center justify-between gap-4 ${
-                    isDone ? 'bg-stone-50 border-stone-200 opacity-80' : 'bg-white border-amber-200/90'
-                  }`}
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
-                      {rem.type === 'medicine' ? (
-                        <Pill className="w-6 h-6 text-rose-600" />
-                      ) : rem.type === 'hydration' ? (
-                        <Droplet className="w-6 h-6 text-sky-600" />
-                      ) : (
-                        <Calendar className="w-6 h-6 text-amber-600" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md">
-                          {rem.time}
-                        </span>
-                        <span className="text-[10px] uppercase tracking-wider text-stone-500 font-bold">
-                          {rem.type}
-                        </span>
-                      </div>
-                      <h4 className="font-bold text-stone-900 text-base mt-1">{rem.title}</h4>
-                      {rem.notes && <p className="text-xs text-stone-500 mt-0.5">{rem.notes}</p>}
-                    </div>
+          {/* TAB 1: OVERVIEW */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              {/* AI Daily Briefing */}
+              <div className="bg-gradient-to-r from-amber-500/10 via-amber-100/30 to-stone-50 border border-amber-200 rounded-3xl p-6 shadow-xs">
+                <div className="flex items-center justify-between pb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-amber-600" />
+                    <h3 className="font-extrabold text-stone-900 font-['Outfit'] text-base">
+                      AI Caregiver Daily Briefing for {patient.name}
+                    </h3>
                   </div>
 
                   <button
-                    onClick={() => onToggleReminder(rem.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
-                      isDone
-                        ? 'bg-stone-200 text-stone-600 hover:bg-stone-300'
-                        : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                    }`}
+                    onClick={handleGenerateSummary}
+                    disabled={loadingSummary}
+                    className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
-                    {isDone ? 'Done ✓' : 'Mark Done'}
+                    <RefreshCw className={`w-3.5 h-3.5 ${loadingSummary ? 'animate-spin' : ''}`} />
+                    <span>{loadingSummary ? 'Analyzing...' : 'Generate New Briefing'}</span>
                   </button>
                 </div>
-              );
-            })}
-          </div>
 
-          {/* Add Reminder Modal */}
-          {showAddReminderModal && (
-            <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-200 text-stone-800 animate-in fade-in">
-                <h3 className="text-xl font-bold text-stone-900 font-['Outfit'] mb-1">
-                  Add Daily Schedule Reminder
-                </h3>
-                <p className="text-xs text-stone-500 mb-4">
-                  Set medication, hydration, or activity reminder for Anima.
+                <p className="text-xs text-stone-600 leading-relaxed mt-2">
+                  {aiSummary 
+                    ? aiSummary.summary 
+                    : `${patient.name} completed today's visual activities with steady focus and good patience. Morning medications are logged as pending.`}
                 </p>
+              </div>
 
-                <form onSubmit={handleCreateReminder} className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Reminder Title
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Evening herbal tea with ginger"
-                      value={newTitle}
-                      onChange={(e) => setNewTitle(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
+              {/* Routine Checklist */}
+              <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs">
+                <div className="flex items-center justify-between pb-4 border-b border-stone-100">
+                  <h3 className="font-extrabold text-stone-900 font-['Outfit'] text-base flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-700" />
+                    Today's Care Routine & Schedule
+                  </h3>
+                  <button
+                    onClick={() => setShowAddReminderModal(true)}
+                    className="px-3 py-1.5 rounded-xl bg-amber-600 text-white font-bold text-xs hover:bg-amber-700 shadow-xs flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Reminder</span>
+                  </button>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 mb-1">
-                        Time
-                      </label>
-                      <input
-                        type="time"
-                        required
-                        value={newTime}
-                        onChange={(e) => setNewTime(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 mb-1">
-                        Category
-                      </label>
-                      <select
-                        value={newType}
-                        onChange={(e) => setNewType(e.target.value as any)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      >
-                        <option value="medicine">Medicine</option>
-                        <option value="hydration">Hydration</option>
-                        <option value="activity">Activity</option>
-                        <option value="appointment">Appointment</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Caregiver Notes
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Keep lukewarm water nearby"
-                      value={newNotes}
-                      onChange={(e) => setNewNotes(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 pt-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowAddReminderModal(false)}
-                      className="px-4 py-2.5 rounded-xl border border-stone-200 text-stone-600 font-bold text-xs hover:bg-stone-100"
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                  {reminders.map((r) => (
+                    <div
+                      key={r.id}
+                      onClick={() => onToggleReminder(r.id)}
+                      className={`p-4 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${
+                        r.status === 'completed'
+                          ? 'bg-emerald-50/60 border-emerald-200'
+                          : 'bg-stone-50 border-stone-200 hover:bg-stone-100/60'
+                      }`}
                     >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-5 py-2.5 rounded-xl bg-amber-600 text-white font-bold text-xs hover:bg-amber-700 shadow-xs cursor-pointer"
-                    >
-                      Save Reminder
-                    </button>
-                  </div>
-                </form>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                          r.status === 'completed' ? 'bg-emerald-500 text-white' : 'bg-stone-200 text-stone-700'
+                        }`}>
+                          {r.status === 'completed' ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                        </div>
+                        <div>
+                          <h4 className={`text-xs font-bold ${r.status === 'completed' ? 'line-through text-stone-500' : 'text-stone-900'}`}>
+                            {getReminderTitle(r)}
+                          </h4>
+                          <span className="text-[11px] text-stone-500 font-medium">
+                            {r.time} • {r.type}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        r.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
+                      }`}>
+                        {r.status === 'completed' ? 'Completed' : 'Pending'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
-        </div>
-      )}
 
-      {/* TAB 5: ADAPTIVE ENGINE RULES */}
-      {activeTab === 'adaptive' && (
-        <div className="space-y-6">
-          <div className="bg-white border border-stone-200 rounded-3xl p-6 shadow-xs">
-            <h3 className="text-lg font-bold text-stone-900 font-['Outfit'] mb-2">
-              Deterministic Adaptive Difficulty Engine Architecture
-            </h3>
-            <p className="text-stone-600 text-xs sm:text-sm leading-relaxed mb-6">
-              MINDORA avoids arbitrary changes. It calculates a rolling average of accuracy and response pacing across recent sessions to ensure the elderly patient experiences neither frustrating failure nor boring repetition.
-            </p>
+          {/* TAB 2: 7-DAY TRENDS */}
+          {activeTab === 'trends' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs">
+                <div className="pb-6 border-b border-stone-200">
+                  <h3 className="text-xl font-extrabold text-stone-900 font-['Outfit'] flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-amber-700" />
+                    7-Day Cognitive Performance & Response Trends
+                  </h3>
+                  <p className="text-xs text-stone-500 mt-1">
+                    Daily engagement accuracy and speed metrics for {patient.name}.
+                  </p>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-900 block mb-1">
-                  Promotion Threshold
-                </span>
-                <div className="text-xl font-black text-emerald-800 mb-1">Rolling Accuracy ≥ 85%</div>
-                <p className="text-xs text-emerald-950 leading-relaxed">
-                  Triggers gradual difficulty promotion (e.g. Level 2 → Level 3) adding 1 additional memory card or faster sequence pattern.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-stone-100 border border-stone-200">
-                <span className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
-                  Comfort Maintenance
-                </span>
-                <div className="text-xl font-black text-stone-900 mb-1">56% to 84% Range</div>
-                <p className="text-xs text-stone-700 leading-relaxed">
-                  Maintains current difficulty level to establish confidence and comfort without cognitive fatigue.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-900 block mb-1">
-                  Demotion / Relief Threshold
-                </span>
-                <div className="text-xl font-black text-amber-800 mb-1">Rolling Accuracy ≤ 55%</div>
-                <p className="text-xs text-amber-950 leading-relaxed">
-                  Gently scales back difficulty (e.g. Level 3 → Level 2) with encouraging reassurance to prevent patient anxiety.
-                </p>
+                <div className="h-72 w-full mt-6">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={MOCK_PERFORMANCE_TRENDS}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                      <XAxis dataKey="day" tick={{ fill: '#6B7280', fontSize: 12 }} />
+                      <YAxis yAxisId="left" domain={[0, 100]} tick={{ fill: '#6B7280', fontSize: 12 }} />
+                      <YAxis yAxisId="right" orientation="right" domain={[0, 10]} tick={{ fill: '#6B7280', fontSize: 12 }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#111827', 
+                          color: '#fff', 
+                          borderRadius: '12px', 
+                          border: 'none',
+                          fontSize: '12px'
+                        }} 
+                      />
+                      <Line 
+                        yAxisId="left"
+                        type="monotone" 
+                        dataKey="accuracy" 
+                        stroke="#D97706" 
+                        strokeWidth={3} 
+                        dot={{ fill: '#D97706', r: 4 }}
+                        name="Accuracy %" 
+                      />
+                      <Line 
+                        yAxisId="right"
+                        type="monotone" 
+                        dataKey="responseTime" 
+                        stroke="#059669" 
+                        strokeWidth={2} 
+                        strokeDasharray="4 4"
+                        dot={{ fill: '#059669', r: 3 }}
+                        name="Response Time (s)" 
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Offline-first data sync architecture explanation */}
-            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-xs text-stone-700 space-y-1">
-              <div className="font-bold text-stone-900 flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>Remote & Low-Connectivity Resilience Architecture</span>
+          {/* TAB 3: ACTIVITY HISTORY */}
+          {activeTab === 'history' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs">
+                <div className="pb-6 border-b border-stone-200">
+                  <h3 className="text-xl font-extrabold text-stone-900 font-['Outfit'] flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-amber-700" />
+                    Completed Game Sessions Log
+                  </h3>
+                  <p className="text-xs text-stone-500 mt-1">
+                    Every cognitive warmup session completed by {patient.name}.
+                  </p>
+                </div>
+
+                <div className="space-y-3 mt-6">
+                  {sessions.map((s) => (
+                    <div 
+                      key={s.id}
+                      className="p-4 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-between gap-4"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-stone-900 text-sm">{s.gameTitle}</h4>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                            {s.accuracy}% Accuracy
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-500 mt-1">
+                          Score: {s.score} • Pacing: {s.responseTime}s • Difficulty: Level {s.difficulty}
+                        </p>
+                      </div>
+                      <span className="text-xs text-stone-400 font-medium">
+                        {s.dateFormatted}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <p>
-                All session records, difficulty states, and reminder checks persist locally in the client's storage cache. In low-bandwidth areas and remote residences, the user enjoys uninterrupted play. Once connectivity is restored, cached sessions synchronize with the central health cloud.
-              </p>
             </div>
+          )}
+
+          {/* TAB 4: REMINDERS */}
+          {activeTab === 'reminders' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs">
+                <div className="flex items-center justify-between pb-6 border-b border-stone-200">
+                  <div>
+                    <h3 className="text-xl font-extrabold text-stone-900 font-['Outfit'] flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-amber-700" />
+                      Manage Scheduled Reminders
+                    </h3>
+                    <p className="text-xs text-stone-500 mt-1">
+                      Medication, hydration, and daily care tasks for {patient.name}.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowAddReminderModal(true)}
+                    className="px-4 py-2 rounded-xl bg-amber-600 text-white font-bold text-xs hover:bg-amber-700 shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Reminder</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3 mt-6">
+                  {reminders.map((r) => (
+                    <div 
+                      key={r.id}
+                      className="p-4 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-between gap-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                          {r.type === 'medicine' ? <Pill className="w-5 h-5 text-rose-600" /> : <Droplet className="w-5 h-5 text-sky-600" />}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-stone-900 text-sm">{getReminderTitle(r)}</h4>
+                            <span className="text-[10px] font-bold uppercase bg-stone-200 text-stone-700 px-2 py-0.5 rounded-md">
+                              {r.type}
+                            </span>
+                          </div>
+                          <p className="text-xs text-stone-500 mt-0.5">
+                            Time: <strong>{r.time}</strong> {r.notes && `• ${getReminderNotes(r)}`}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => onToggleReminder(r.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          r.status === 'completed'
+                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                            : 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+                        }`}
+                      >
+                        {r.status === 'completed' ? 'Completed' : 'Mark Done'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: ADAPTIVE ENGINE RULES */}
+          {activeTab === 'adaptive' && (
+            <div className="space-y-6">
+              <div className="bg-white border border-stone-200 rounded-3xl p-6 sm:p-8 shadow-xs">
+                <h3 className="text-lg font-bold text-stone-900 font-['Outfit'] mb-2">
+                  Deterministic Adaptive Difficulty Rules
+                </h3>
+                <p className="text-stone-600 text-xs sm:text-sm leading-relaxed mb-6">
+                  MINDORA calculates rolling averages across recent activities to gently adjust levels without startling the patient.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-900 block mb-1">
+                      Promotion Threshold
+                    </span>
+                    <div className="text-xl font-black text-emerald-800 mb-1">Rolling Avg ≥ 85%</div>
+                    <p className="text-xs text-emerald-950 leading-relaxed">
+                      Advances to next difficulty level (e.g. 4 to 5 cards) when ready.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-stone-100 border border-stone-200">
+                    <span className="text-xs font-bold uppercase tracking-wider text-stone-700 block mb-1">
+                      Comfort Zone
+                    </span>
+                    <div className="text-xl font-black text-stone-900 mb-1">56% to 84% Range</div>
+                    <p className="text-xs text-stone-700 leading-relaxed">
+                      Maintains current comfort level to build confidence without anxiety.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
+                    <span className="text-xs font-bold uppercase tracking-wider text-amber-900 block mb-1">
+                      Gentle Relief Threshold
+                    </span>
+                    <div className="text-xl font-black text-amber-800 mb-1">Rolling Avg ≤ 55%</div>
+                    <p className="text-xs text-amber-950 leading-relaxed">
+                      Gently eases difficulty to prevent frustration or cognitive fatigue.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: DEVICE PAIRING */}
+          {activeTab === 'devices' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs">
+                <div className="flex items-center justify-between pb-4 border-b border-stone-200">
+                  <div className="flex items-center gap-2.5">
+                    <Smartphone className="w-5 h-5 text-amber-700" />
+                    <h2 className="text-xl font-extrabold text-stone-900 font-['Outfit']">
+                      Patient Screen Pairing Requests
+                    </h2>
+                  </div>
+                  <span className="text-xs font-bold text-rose-800 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
+                    {pendingPairRequests.length} Pending Approval
+                  </span>
+                </div>
+
+                <p className="text-xs text-stone-500 mt-2 mb-6">
+                  When {patient.name} opens Mindora on a screen or tablet, approve it with one tap below.
+                </p>
+
+                {pendingPairRequests.length === 0 ? (
+                  <div className="py-10 text-center text-stone-400 text-sm">
+                    No incoming connection requests. All screens are currently connected.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingPairRequests.map(req => (
+                      <div
+                        key={req.id}
+                        className="p-4 sm:p-5 rounded-2xl border-2 border-amber-300 bg-amber-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-black text-amber-900 font-mono tracking-wider bg-white px-2.5 py-0.5 rounded-md border border-amber-200">
+                              {req.pairCode}
+                            </span>
+                            <span className="text-xs font-bold text-stone-800">
+                              {req.deviceName}
+                            </span>
+                          </div>
+                          <p className="text-xs text-stone-500 mt-1">
+                            {req.browserInfo} • Requested {req.requestedAt}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleRejectPairing(req.id)}
+                            className="px-3 py-1.5 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-100 text-xs font-bold transition cursor-pointer"
+                          >
+                            Reject
+                          </button>
+                          <button
+                            onClick={() => handleApprovePairing(req.id)}
+                            className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition flex items-center gap-1 cursor-pointer"
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>Approve Screen</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 7: DOCTOR'S PRESCRIBED REGIMEN */}
+          {activeTab === 'regimen' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs">
+                <div className="flex items-center justify-between pb-4 border-b border-stone-200">
+                  <div>
+                    <h2 className="text-xl font-extrabold text-stone-900 font-['Outfit']">
+                      Doctor's Prescribed Regimen for {patient.name}
+                    </h2>
+                    <p className="text-xs text-stone-500 mt-1">
+                      Prescribed by {doctorPlan.doctorName} (Last updated: {doctorPlan.lastUpdated})
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold text-teal-900 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
+                    Doctor Controlled
+                  </span>
+                </div>
+
+                {doctorPlan.clinicalGoal && (
+                  <div className="my-4 p-4 rounded-2xl bg-teal-50/60 border border-teal-200/80 text-xs text-teal-950 font-medium">
+                    <strong>Clinical Directive:</strong> {doctorPlan.clinicalGoal}
+                  </div>
+                )}
+
+                <div className="space-y-3 mt-4">
+                  {doctorPlan.activities
+                    .sort((a, b) => a.order - b.order)
+                    .map((act) => (
+                      <div
+                        key={act.gameType}
+                        className={`p-4 rounded-2xl border flex items-center justify-between gap-3 ${
+                          act.enabled
+                            ? 'bg-white border-stone-200'
+                            : 'bg-stone-50 border-stone-200 opacity-60'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-stone-900 bg-stone-100 px-2 py-0.5 rounded-md">
+                              Step {act.order}
+                            </span>
+                            <h4 className="font-bold text-stone-900 text-sm">{act.title}</h4>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              act.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-200 text-stone-600'
+                            }`}>
+                              {act.enabled ? `${act.rounds} Rounds Active` : 'Disabled by Doctor'}
+                            </span>
+                          </div>
+                          {act.doctorNotes && (
+                            <p className="text-xs text-stone-500 mt-1 italic">
+                              Doctor note: "{act.doctorNotes}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 8: ACCESSIBILITY & DISPLAY SETTINGS (PER PATIENT) */}
+          {activeTab === 'accessibility' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-stone-200 gap-4">
+                  <div>
+                    <h3 className="text-xl font-extrabold text-stone-900 font-['Outfit'] flex items-center gap-2">
+                      <Type className="w-5 h-5 text-amber-700" />
+                      Accessibility & Comfort Settings
+                    </h3>
+                    <p className="text-xs text-stone-500 mt-1">
+                      Configure display preferences for <strong>{patient.name}</strong> so the patient enjoys a seamless experience without needing to adjust settings herself.
+                    </p>
+                  </div>
+
+                  <button
+                    id="save-caregiver-access-btn"
+                    onClick={handleSaveAccessibility}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Save for {patient.name.split(' ')[0]}</span>
+                  </button>
+                </div>
+
+                {accessSavedSuccess && (
+                  <div className="mt-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Preferences saved! {patient.name}'s screen will immediately adopt these settings.</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                  {/* Large Font Mode */}
+                  <div className="p-5 rounded-2xl border border-stone-200 bg-stone-50 flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Type className="w-5 h-5 text-amber-700" />
+                        <h4 className="font-bold text-stone-900 text-sm">Large Text Mode</h4>
+                      </div>
+                      <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                        Enlarges fonts across exercises, cards, and daily reminders for easier reading.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={patientAccessibility.largeText}
+                        onChange={(e) => setPatientAccessibility(prev => ({ ...prev, largeText: e.target.checked }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                    </label>
+                  </div>
+
+                  {/* High Contrast Mode */}
+                  <div className="p-5 rounded-2xl border border-stone-200 bg-stone-50 flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Contrast className="w-5 h-5 text-amber-700" />
+                        <h4 className="font-bold text-stone-900 text-sm">High Contrast Theme</h4>
+                      </div>
+                      <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                        Deep contrast theme with dark background and vibrant amber buttons.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={patientAccessibility.highContrast}
+                        onChange={(e) => setPatientAccessibility(prev => ({ ...prev, highContrast: e.target.checked }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Spoken Audio Feedback */}
+                  <div className="p-5 rounded-2xl border border-stone-200 bg-stone-50 flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Volume2 className="w-5 h-5 text-sky-700" />
+                        <h4 className="font-bold text-stone-900 text-sm">Auditory Speech & Chimes</h4>
+                      </div>
+                      <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                        Speaks daily greetings and celebration affirmations aloud with gentle chimes.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={patientAccessibility.audioFeedback}
+                        onChange={(e) => setPatientAccessibility(prev => ({ ...prev, audioFeedback: e.target.checked }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Reduced Motion */}
+                  <div className="p-5 rounded-2xl border border-stone-200 bg-stone-50 flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-5 h-5 text-indigo-700" />
+                        <h4 className="font-bold text-stone-900 text-sm">Reduced Motion</h4>
+                      </div>
+                      <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+                        Softens card transitions and minimizes visual motion to prevent disorientation.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={patientAccessibility.reduceMotion}
+                        onChange={(e) => setPatientAccessibility(prev => ({ ...prev, reduceMotion: e.target.checked }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Primary Language */}
+                <div className="mt-6 p-5 rounded-2xl border border-stone-200 bg-stone-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="font-bold text-stone-900 text-sm">Patient's Preferred Native Language</h4>
+                    <p className="text-xs text-stone-500 mt-1">
+                      Sets the language for {patient.name}'s guided exercises and voice assistant.
+                    </p>
+                  </div>
+
+                  <select
+                    value={patientLanguage}
+                    onChange={(e) => setPatientLanguage(e.target.value as Language)}
+                    className="bg-white border border-stone-300 text-stone-900 text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                  >
+                    <option value="as">অসমীয়া (Assamese)</option>
+                    <option value="bn">বাংলা (Bengali)</option>
+                    <option value="hi">हिन्दी (Hindi)</option>
+                    <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                    <option value="en">English (Universal)</option>
+                  </select>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+        </main>
+
+      </div>
+
+      {/* Modal: Add Reminder */}
+      {showAddReminderModal && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-stone-200 p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95">
+            <h4 className="font-extrabold text-stone-900 font-['Outfit'] text-lg mb-4">
+              Add New Reminder for {patient.name}
+            </h4>
+
+            <form onSubmit={handleCreateReminder} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Afternoon Hydration or Blood Pressure Check"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Time</label>
+                  <input
+                    type="text"
+                    required
+                    value={newTime}
+                    onChange={(e) => setNewTime(e.target.value)}
+                    className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Category</label>
+                  <select
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value as any)}
+                    className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500 bg-white"
+                  >
+                    <option value="medicine">Medicine</option>
+                    <option value="hydration">Hydration</option>
+                    <option value="activity">Activity</option>
+                    <option value="appointment">Appointment</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Notes (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 1 glass of fresh water with lemon"
+                  value={newNotes}
+                  onChange={(e) => setNewNotes(e.target.value)}
+                  className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddReminderModal(false)}
+                  className="px-4 py-2 rounded-xl border border-stone-300 text-stone-600 text-xs font-bold hover:bg-stone-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  Save Reminder
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

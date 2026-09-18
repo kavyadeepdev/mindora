@@ -1,4 +1,15 @@
-import { PatientProfile, CaregiverProfile, GameSession, Reminder, CaregiverAlert, CulturalMemoryItem, AdaptiveDifficultyState } from '../types';
+import { 
+  PatientProfile, 
+  CaregiverProfile, 
+  DoctorProfile, 
+  GameSession, 
+  Reminder, 
+  CaregiverAlert, 
+  CulturalMemoryItem, 
+  AdaptiveDifficultyState, 
+  PatientActivityPlan, 
+  DevicePairingRequest 
+} from '../types';
 
 export const INITIAL_PATIENT: PatientProfile = {
   id: 'patient-anima-01',
@@ -12,7 +23,7 @@ export const INITIAL_PATIENT: PatientProfile = {
     'Gardening',
     'Family',
     'Local festivals',
-    'Assam tea culture',
+    'Tea & Gardening',
     'Handloom & Weaving'
   ],
   avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
@@ -26,61 +37,334 @@ export const INITIAL_PATIENT: PatientProfile = {
     nightSleep: '9:30 PM'
   },
   caregiverId: 'caregiver-meera-01',
-  culturalTheme: 'Assam Brahmaputra Valley'
+  culturalTheme: 'Everyday Life & Nature',
+  diagnosis: "Early-stage Alzheimer's Disease",
+  stage: 'Mild Cognitive Impairment (MCI)',
+  accessibility: {
+    largeText: true,
+    highContrast: false,
+    reduceMotion: true,
+    audioFeedback: true
+  }
 };
+
+export const MOCK_PATIENTS: PatientProfile[] = [
+  INITIAL_PATIENT,
+  {
+    id: 'patient-bhaben-02',
+    name: 'Bhaben Baruah',
+    age: 78,
+    gender: 'Male',
+    location: 'Guwahati, Assam',
+    language: 'bn',
+    interests: ['Folk storytelling', 'Newspaper reading', 'Courtyard gardening', 'Radio broadcasts'],
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    dailyRoutine: {
+      morningWakeUp: '6:00 AM',
+      morningHydration: '6:45 AM',
+      morningMeds: '8:30 AM',
+      breakfast: '9:00 AM',
+      morningWalk: '10:30 AM',
+      eveningTea: '4:30 PM',
+      nightSleep: '9:00 PM'
+    },
+    caregiverId: 'caregiver-meera-01',
+    culturalTheme: 'Heritage & Quiet Outdoors',
+    diagnosis: 'Vascular Cognitive Impairment',
+    stage: 'Moderate (Stage 4)',
+    accessibility: {
+      largeText: true,
+      highContrast: true,
+      reduceMotion: true,
+      audioFeedback: true
+    }
+  },
+  {
+    id: 'patient-pratima-03',
+    name: 'Pratima Sharma',
+    age: 69,
+    gender: 'Female',
+    location: 'Dibrugarh, Assam',
+    language: 'hi',
+    interests: ['Devotional hymns', 'Flower arranging', 'Knitting', 'Old songs'],
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    dailyRoutine: {
+      morningWakeUp: '7:00 AM',
+      morningHydration: '7:30 AM',
+      morningMeds: '9:15 AM',
+      breakfast: '9:45 AM',
+      morningWalk: '11:15 AM',
+      eveningTea: '4:15 PM',
+      nightSleep: '9:45 PM'
+    },
+    caregiverId: 'caregiver-meera-01',
+    culturalTheme: 'Music & Calm Courtyard',
+    diagnosis: 'Mild Amnestic Cognitive Decline',
+    stage: 'Mild (Stage 3)',
+    accessibility: {
+      largeText: false,
+      highContrast: false,
+      reduceMotion: false,
+      audioFeedback: true
+    }
+  }
+];
 
 export const INITIAL_CAREGIVER: CaregiverProfile = {
   id: 'caregiver-meera-01',
   name: 'Meera Devi',
   relation: 'Daughter & Primary Caregiver',
   phone: '+91 98640 12345',
-  linkedPatientIds: ['patient-anima-01']
+  linkedPatientIds: ['patient-anima-01', 'patient-bhaben-02', 'patient-pratima-03']
 };
+
+export const INITIAL_DOCTOR: DoctorProfile = {
+  id: 'doctor-debojit-01',
+  name: 'Dr. Debojit Sarma',
+  specialty: 'Cognitive Neurology & Dementia Care',
+  hospital: 'Guwahati Neurological Care & AIIMS Clinical Affiliate',
+  phone: '+91 94350 78901',
+  email: 'dr.sarma@neurocare-assam.org',
+  linkedPatientIds: ['patient-anima-01', 'patient-bhaben-02', 'patient-pratima-03']
+};
+
+export const INITIAL_ACTIVITY_PLANS: Record<string, PatientActivityPlan> = {
+  'patient-anima-01': {
+    patientId: 'patient-anima-01',
+    prescribedByDoctorId: 'doctor-debojit-01',
+    doctorName: 'Dr. Debojit Sarma',
+    lastUpdated: '18 Sep 2026',
+    clinicalGoal: 'Stabilize visual recall and step sequencing through familiar daily stimuli.',
+    activities: [
+      {
+        gameType: 'memory',
+        title: 'Memory Match',
+        enabled: true,
+        order: 1,
+        rounds: 5,
+        targetFocus: 'Visual Association & Object Recall',
+        doctorNotes: 'Maintain gentle 5-second study window. Familiar flowers and utensils.'
+      },
+      {
+        gameType: 'attention',
+        title: 'Attention Challenge',
+        enabled: true,
+        order: 2,
+        rounds: 5,
+        targetFocus: 'Selective Focus & Visual Filtering',
+        doctorNotes: 'Keep contrast high; allow unhurried response time.'
+      },
+      {
+        gameType: 'pattern',
+        title: 'Pattern Recognition',
+        enabled: true,
+        order: 3,
+        rounds: 5,
+        targetFocus: 'Working Memory & Sequence Prediction',
+        doctorNotes: 'Support cognitive rhythm recognition.'
+      },
+      {
+        gameType: 'routine',
+        title: 'Daily Routine Recall',
+        enabled: true,
+        order: 4,
+        rounds: 5,
+        targetFocus: 'Executive Function & Chronological Ordering',
+        doctorNotes: 'Strengthen morning and hydration recall.'
+      }
+    ]
+  },
+  'patient-bhaben-02': {
+    patientId: 'patient-bhaben-02',
+    prescribedByDoctorId: 'doctor-debojit-01',
+    doctorName: 'Dr. Debojit Sarma',
+    lastUpdated: '17 Sep 2026',
+    clinicalGoal: 'Shorter low-fatigue sessions focusing on familiar memories and daily routine.',
+    activities: [
+      {
+        gameType: 'memory',
+        title: 'Memory Match',
+        enabled: true,
+        order: 1,
+        rounds: 3,
+        targetFocus: 'Visual Recall',
+        doctorNotes: '3 rounds maximum to prevent afternoon cognitive fatigue.'
+      },
+      {
+        gameType: 'routine',
+        title: 'Daily Routine Recall',
+        enabled: true,
+        order: 2,
+        rounds: 3,
+        targetFocus: 'Executive Function',
+        doctorNotes: 'Morning walk and newspaper routine recall.'
+      },
+      {
+        gameType: 'attention',
+        title: 'Attention Challenge',
+        enabled: false,
+        order: 3,
+        rounds: 3,
+        targetFocus: 'Selective Focus',
+        doctorNotes: 'Temporarily disabled due to visual strain; re-evaluate next clinic visit.'
+      },
+      {
+        gameType: 'pattern',
+        title: 'Pattern Recognition',
+        enabled: true,
+        order: 4,
+        rounds: 3,
+        targetFocus: 'Working Memory',
+        doctorNotes: 'Simple 2-item alternation sequences.'
+      }
+    ]
+  },
+  'patient-pratima-03': {
+    patientId: 'patient-pratima-03',
+    prescribedByDoctorId: 'doctor-debojit-01',
+    doctorName: 'Dr. Debojit Sarma',
+    lastUpdated: '16 Sep 2026',
+    clinicalGoal: 'Early MCI intervention: active pattern and selective attention reinforcement.',
+    activities: [
+      {
+        gameType: 'attention',
+        title: 'Attention Challenge',
+        enabled: true,
+        order: 1,
+        rounds: 5,
+        targetFocus: 'Selective Focus & Agility',
+        doctorNotes: 'High engagement in morning sessions.'
+      },
+      {
+        gameType: 'memory',
+        title: 'Memory Match',
+        enabled: true,
+        order: 2,
+        rounds: 5,
+        targetFocus: 'Visual Association',
+        doctorNotes: 'Good recall with household items.'
+      },
+      {
+        gameType: 'pattern',
+        title: 'Pattern Recognition',
+        enabled: true,
+        order: 3,
+        rounds: 5,
+        targetFocus: 'Sequence Prediction',
+        doctorNotes: 'Encourage gentle self-paced attempts.'
+      },
+      {
+        gameType: 'routine',
+        title: 'Daily Routine Recall',
+        enabled: true,
+        order: 4,
+        rounds: 5,
+        targetFocus: 'Daily Task Sequencing',
+        doctorNotes: 'Reinforce afternoon tea & meditation steps.'
+      }
+    ]
+  }
+};
+
+export const INITIAL_PAIRING_REQUESTS: DevicePairingRequest[] = [
+  {
+    id: 'pair-req-101',
+    pairCode: 'MND-842',
+    deviceName: 'Living Room Tablet (Apple iPadOS 18)',
+    browserInfo: 'Mobile Safari 18.2',
+    ipAddress: '103.28.246.12 (Jorhat, Assam)',
+    status: 'pending',
+    patientId: 'patient-anima-01',
+    patientName: 'Anima Devi',
+    requestedAt: 'Just now (Awaiting Doctor or Caretaker Approval)'
+  }
+];
+
+export const INITIAL_LINKED_DEVICES: DevicePairingRequest[] = [
+  {
+    id: 'pair-req-100',
+    pairCode: 'MND-194',
+    deviceName: 'Bedroom Samsung Tab S9 Ultra',
+    browserInfo: 'Chrome 128 (Android 14)',
+    ipAddress: '103.28.246.12 (Jorhat, Assam)',
+    status: 'approved',
+    patientId: 'patient-anima-01',
+    patientName: 'Anima Devi',
+    approvedBy: 'Dr. Debojit Sarma',
+    requestedAt: '18 Sep 2026, 09:15 AM',
+    approvedAt: '18 Sep 2026, 09:16 AM',
+    token: 'tok_paired_anima_dev_tab_194'
+  }
+];
 
 export const INITIAL_REMINDERS: Reminder[] = [
   {
     id: 'rem-1',
     patientId: 'patient-anima-01',
     type: 'medicine',
-    title: 'Morning Medicine (Blood pressure & vitamins)',
-    titleAssamese: 'পুৱাৰ ঔষধ (ৰক্তচাপ আৰু ভিটামিন)',
-    titleHindi: 'सुबह की दवा (ब्लड प्रेशर व विटामिन)',
+    title: 'Morning Medicine',
+    titleAssamese: 'পুৱাৰ ঔষধ',
+    titleHindi: 'सुबह की दवा',
+    titleBengali: 'সকালের ওষুধ',
+    titleKannada: 'ಮುಂಜಾನೆಯ ಔಷಧಿ',
     time: '9:00 AM',
     status: 'completed',
-    notes: 'Take with warm water after breakfast'
+    notes: 'Take with warm water after breakfast',
+    notesAssamese: 'পুৱাৰ জলপান খোৱাৰ পিছত কুহুমীয়া পানীৰে খাব',
+    notesHindi: 'नाश्ते के बाद गुनगुने पानी के साथ लें',
+    notesBengali: 'প্রাতরাশের পর হালকা গরম জল দিয়ে খান',
+    notesKannada: 'ಉಪಹಾರದ ನಂತರ ಬೆಚ್ಚಗಿನ ನೀರಿನೊಂದಿಗೆ ತೆಗೆದುಕೊಳ್ಳಿ'
   },
   {
     id: 'rem-2',
     patientId: 'patient-anima-01',
     type: 'hydration',
-    title: 'Drink Water (1 full glass)',
-    titleAssamese: 'এক গিলাচ বিশুদ্ধ পানী খাবলৈ পাহৰিব নালাগে',
-    titleHindi: 'एक गिलास ताजा पानी पिएं',
+    title: 'Drink Fresh Water',
+    titleAssamese: 'এক গিলাচ বিশুদ্ধ পানী',
+    titleHindi: 'एक गिलास ताजा पानी',
+    titleBengali: 'এক গ্লাস বিশুদ্ধ জল',
+    titleKannada: 'ಒಂದು ಲೋಟ ತಾಜಾ ನೀರು',
     time: '10:30 AM',
     status: 'pending',
-    notes: 'Lukewarm water is prepared in copper jug'
+    notes: 'Lukewarm water is prepared in copper jug',
+    notesAssamese: 'তামাৰ জগৰ পৰা এক গিলাচ বিশুদ্ধ পানী খাব',
+    notesHindi: 'तांबे के जग में ताजा पानी रखा गया है',
+    notesBengali: 'তামার পাত্রে রাখা তাজা জল পান করুন',
+    notesKannada: 'ತಾಮ್ರದ ಜಗ್‌ನಲ್ಲಿ ತಾಜಾ ನೀರನ್ನು ಸಿದ್ಧಪಡಿಸಲಾಗಿದೆ'
   },
   {
     id: 'rem-3',
     patientId: 'patient-anima-01',
     type: 'activity',
-    title: 'Morning Courtyard Walk',
-    titleAssamese: 'চোতালত পাতলকৈ খোজ কঢ়া',
+    title: 'Courtyard Walk',
+    titleAssamese: 'চোতালত পাতল খোজ কঢ়া',
     titleHindi: 'आंगन में सुबह की टहल',
+    titleBengali: 'উঠোনে সকালের হাঁটা',
+    titleKannada: 'ಅಂಗಳದಲ್ಲಿ ಮುಂಜಾನೆ ನಡಿಗೆ',
     time: '11:00 AM',
     status: 'pending',
-    notes: 'Gentle walk around the flowering tulsi plant'
+    notes: 'Gentle walk around the garden',
+    notesAssamese: 'চোতাল আৰু বাগানৰ চাৰিওফালে পাতল খোজ কঢ়া',
+    notesHindi: 'आंगन और बगीचे में धीमी गति से टहलना',
+    notesBengali: 'উঠোন এবং বাগানের চারপাশে ধীরেসুস্থে হাঁটা',
+    notesKannada: 'ಅಂಗಳ ಮತ್ತು ತೋಟದ ಸುತ್ತಲೂ ನಿಧಾನವಾಗಿ ನಡಿಗೆ'
   },
   {
     id: 'rem-4',
     patientId: 'patient-anima-01',
     type: 'appointment',
-    title: 'Doctor Appointment (Dr. Baruah - Routine Wellness)',
-    titleAssamese: 'ডাঃ বৰুৱাৰ সৈতে নিয়মীয়া স্বাস্থ্য পৰীক্ষা',
-    titleHindi: 'डॉ. बरुआ से नियमित स्वास्थ्य परामर्श',
+    title: 'Routine Wellness Checkup',
+    titleAssamese: 'নিয়মীয়া স্বাস্থ্য পৰীক্ষা',
+    titleHindi: 'नियमित स्वास्थ्य परामर्श',
+    titleBengali: 'নিয়মিত স্বাস্থ্য পরীক্ষা',
+    titleKannada: 'ನಿಯಮಿತ ಆರೋಗ್ಯ ತಪಾಸಣೆ',
     time: '4:30 PM',
     status: 'pending',
-    notes: 'Civil Hospital OPD, accompanied by Meera'
+    notes: 'Routine wellness consultation with caregiver',
+    notesAssamese: 'যত্নলোৱা ব্যক্তিৰ সৈতে নিয়মীয়া স্বাস্থ্য পৰামৰ্শ',
+    notesHindi: 'देखभालकर्ता के साथ नियमित स्वास्थ्य परामर्श',
+    notesBengali: 'তত্ত্বাবধায়কের সাথে নিয়মিত স্বাস্থ্য পরীক্ষা',
+    notesKannada: 'ಆರೈಕೆದಾರರೊಂದಿಗೆ ನಿಯಮಿತ ಆರೋಗ್ಯ ಸಮಾಲೋಚನೆ'
   }
 ];
 
@@ -281,8 +565,11 @@ export const INITIAL_ALERTS: CaregiverAlert[] = [
 export const CULTURAL_MEMORIES: CulturalMemoryItem[] = [
   {
     id: 'mem-1',
-    title: 'Assamese Gamosa (ফুলাম গামোচা)',
+    title: 'Handwoven Scarf',
     titleAssamese: 'ফুলাম গামোচা',
+    titleHindi: 'पारंपरिक दुपट्टा',
+    titleBengali: 'হাতে বোনা উত্তরীয়',
+    titleKannada: 'ಕೈಮಗ್ಗದ ಶಾಲು',
     category: 'Handloom & Weaving',
     description: 'The white cotton towel with intricate red woven flowers, symbol of respect given to elders and guests.',
     emoji: '🧣',
@@ -290,8 +577,11 @@ export const CULTURAL_MEMORIES: CulturalMemoryItem[] = [
   },
   {
     id: 'mem-2',
-    title: 'Majuli Clay & Bamboo Mask',
-    titleAssamese: 'মাজুলীৰ মুখা শিল্প',
+    title: 'Clay & Bamboo Mask',
+    titleAssamese: 'মুখা শিল্প',
+    titleHindi: 'मिट्टी और बांस का मुखौटा',
+    titleBengali: 'মাটি ও বাঁশের মুখোশ',
+    titleKannada: 'ಮಣ್ಣು ಮತ್ತು ಬಿದಿರಿನ ಮುಖವಾಡ',
     category: 'Traditional Crafts',
     description: 'Handcrafted mask from the river island of Majuli, used in traditional Bhaona dance drama.',
     emoji: '🎭',
@@ -299,8 +589,11 @@ export const CULTURAL_MEMORIES: CulturalMemoryItem[] = [
   },
   {
     id: 'mem-3',
-    title: 'Assam Tea Garden (চাহ বাগিচা)',
+    title: 'Misty Tea Garden',
     titleAssamese: 'সেউজীয়া চাহ বাগিচা',
+    titleHindi: 'चाय का हरा बागान',
+    titleBengali: 'সবুজ চা বাগান',
+    titleKannada: 'ಹಚ್ಚ ಹಸಿರಿನ ಚಹಾ ತೋಟ',
     category: 'Nature & Landscape',
     description: 'Lush green tea bushes of Jorhat, with morning dew and women singing while plucking fresh buds.',
     emoji: '🍃',
@@ -308,28 +601,37 @@ export const CULTURAL_MEMORIES: CulturalMemoryItem[] = [
   },
   {
     id: 'mem-4',
-    title: 'Kopou Phool (Foxtail Orchid)',
+    title: 'Foxtail Orchid Blossoms',
     titleAssamese: 'কপৌ ফুল',
+    titleHindi: 'ऑर्किड का फूल',
+    titleBengali: 'অর্কিড ফুল',
+    titleKannada: 'ಆರ್ಕಿಡ್ ಹೂವುಗಳು',
     category: 'Gardening & Nature',
-    description: 'Pink foxtail orchid blooming in Rongali Bihu season, lovingly hung in courtyard trees.',
+    description: 'Pink foxtail orchid blooming in spring season, lovingly hung in courtyard trees.',
     emoji: '🌸',
     theme: 'Flowers'
   },
   {
     id: 'mem-5',
-    title: 'Bihu Dhol & Mohor Pepa',
-    titleAssamese: 'বিহু ঢোল আৰু ম’হৰ শিঙৰ পেঁপা',
+    title: 'Traditional Drums & Flutes',
+    titleAssamese: 'বিহু ঢোল আৰু পেঁপা',
+    titleHindi: 'पारंपरिक ढोल और बांसुरी',
+    titleBengali: 'ঐতিহ্যবাহী ঢোল ও বাঁশি',
+    titleKannada: 'ಪಾರಂಪರಿಕ ಡ್ರಮ್ ಮತ್ತು ಕೊಳಲು',
     category: 'Traditional Music',
-    description: 'Festive wooden drum and buffalo-horn flute that fill the springtime Brahmaputra breeze with joy.',
+    description: 'Festive wooden drum and buffalo-horn flute that fill the springtime breeze with joy.',
     emoji: '🥁',
     theme: 'Music'
   },
   {
     id: 'mem-6',
-    title: 'Kahi-Bati Bell Metal Ware',
-    titleAssamese: 'সৰ্থেবাৰীৰ কাঁহ-পিতলৰ বাচন',
+    title: 'Bell Metal Ware',
+    titleAssamese: 'কাঁহ-পিতলৰ বাচন',
+    titleHindi: 'पीतल के पारंपरिक बर्तन',
+    titleBengali: 'কাঁসার ঐতিহ্যবাহী পাত্র',
+    titleKannada: 'ಹಿತ್ತಾಳೆಯ ಪಾತ್ರೆಗಳು',
     category: 'Family & Home',
-    description: 'Gleaming golden bell-metal plates from Sarthebari used for serving traditional rice and pitha.',
+    description: 'Gleaming golden bell-metal plates used for serving traditional meals and festive sweets.',
     emoji: '🍲',
     theme: 'Household'
   }

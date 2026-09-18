@@ -13,15 +13,20 @@ import {
   RefreshCw,
   Sparkles,
   HelpCircle,
-  RotateCcw
+  RotateCcw,
+  LogOut,
+  LogIn,
+  Stethoscope,
+  Smartphone
 } from 'lucide-react';
-import { Language, AccessibilitySettings } from '../../types';
+import { Language, AccessibilitySettings, PatientProfile, SubdomainPortal } from '../../types';
 import { getTranslation } from '../../utils/translations';
 import { StorageService } from '../../services/storage';
 
 interface NavbarProps {
-  currentView: 'landing' | 'patient' | 'caregiver' | 'game';
-  onNavigate: (view: 'landing' | 'patient' | 'caregiver') => void;
+  portal: SubdomainPortal;
+  currentView: 'landing' | 'patient' | 'caregiver' | 'game' | 'doctor';
+  onNavigate: (view: any) => void;
   language: Language;
   onLanguageChange: (lang: Language) => void;
   accessibility: AccessibilitySettings;
@@ -33,9 +38,15 @@ interface NavbarProps {
   isSyncing: boolean;
   showDemoGuide: boolean;
   onToggleDemoGuide: () => void;
+  currentUser: { name: string; email: string; role?: string } | null;
+  onOpenAuthModal: (tab?: 'patient' | 'caregiver' | 'doctor') => void;
+  onSignOut: () => void;
+  patient: PatientProfile;
+  onSwitchPortal?: (portal: SubdomainPortal) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
+  portal,
   currentView,
   onNavigate,
   language,
@@ -48,9 +59,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSync,
   isSyncing,
   showDemoGuide,
-  onToggleDemoGuide
+  onToggleDemoGuide,
+  currentUser,
+  onOpenAuthModal,
+  onSignOut,
+  patient,
+  onSwitchPortal
 }) => {
   const [showAccessMenu, setShowAccessMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs">
@@ -61,70 +78,81 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center gap-3">
             <button
               id="nav-logo-btn"
-              onClick={() => onNavigate('landing')}
+              onClick={() => {
+                if (portal === 'doctor') onNavigate('doctor');
+                else if (portal === 'caretaker') onNavigate('caregiver');
+                else if (portal === 'patient') onNavigate('patient');
+                else onNavigate('landing');
+              }}
               className="flex items-center gap-3 text-left focus:outline-none group"
             >
               <div className="w-11 h-11 rounded-2xl bg-amber-600/10 border border-amber-600/25 flex items-center justify-center text-amber-800 shadow-xs group-hover:bg-amber-600/15 transition">
-                <HeartHandshake className="w-6 h-6 text-amber-700" />
+                {portal === 'doctor' ? (
+                  <Stethoscope className="w-6 h-6 text-teal-700" />
+                ) : (
+                  <HeartHandshake className="w-6 h-6 text-amber-700" />
+                )}
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold text-xl tracking-tight text-stone-900 font-['Outfit']">
-                    MINDORA
+                    {getTranslation('appName', language)}
                   </span>
-                  <span className="hidden md:inline-flex text-[11px] font-semibold tracking-wide bg-amber-100/80 text-amber-900 border border-amber-200 px-2.5 py-0.5 rounded-full">
-                    Care Companion
+                  <span className={`hidden md:inline-flex text-[11px] font-semibold tracking-wide border px-2.5 py-0.5 rounded-full ${
+                    portal === 'doctor'
+                      ? 'bg-teal-50 text-teal-900 border-teal-200'
+                      : 'bg-amber-100/80 text-amber-900 border-amber-200'
+                  }`}>
+                    {portal === 'doctor' ? 'Clinician' :
+                     portal === 'caretaker' ? 'Caretaker' :
+                     getTranslation('careCompanion', language)}
                   </span>
                 </div>
                 <p className="text-xs text-stone-500 font-medium hidden sm:block">
-                  A familiar companion for everyday memory, activity and care.
+                  {getTranslation('appTagline', language)}
                 </p>
               </div>
             </button>
           </div>
 
-          {/* Navigation Modes Switcher */}
-          <nav className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-2xl border border-stone-200/80">
-            <button
-              id="nav-btn-landing"
-              onClick={() => onNavigate('landing')}
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
-                currentView === 'landing'
-                  ? 'bg-white text-stone-900 shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/50'
-              }`}
-            >
-              <Compass className="w-4 h-4" />
-              <span className="hidden sm:inline">Overview</span>
-            </button>
+          {/* Portal / Subdomain Indicator Badge (Clean, zero mode buttons) */}
+          <div className="hidden md:flex items-center gap-2">
+            {portal === 'patient' && (
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-bold text-amber-950">{patient.name}</span>
+                <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-full">
+                  Paired Device
+                </span>
+              </div>
+            )}
 
-            <button
-              id="nav-btn-patient"
-              onClick={() => onNavigate('patient')}
-              className={`px-3.5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-1.5 ${
-                currentView === 'patient' || currentView === 'game'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'text-stone-700 hover:text-amber-700 hover:bg-amber-50'
-              }`}
-            >
-              <User className="w-4 h-4" />
-              <span>{getTranslation('patientMode', language)}</span>
-            </button>
+            {portal === 'doctor' && (
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 border border-teal-200">
+                <Stethoscope className="w-4 h-4 text-teal-700" />
+                <span className="text-xs font-extrabold text-teal-950">Clinical Control Portal</span>
+                <span className="text-[10px] font-semibold text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded-full">
+                  Dr. Debojit Sarma
+                </span>
+              </div>
+            )}
 
-            <button
-              id="nav-btn-caregiver"
-              onClick={() => onNavigate('caregiver')}
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-1.5 ${
-                currentView === 'caregiver'
-                  ? 'bg-stone-800 text-white shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/50'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span className="hidden sm:inline">Caregiver</span>
-              <span className="sm:hidden">Care</span>
-            </button>
-          </nav>
+            {portal === 'caretaker' && (
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200">
+                <ShieldCheck className="w-4 h-4 text-amber-700" />
+                <span className="text-xs font-extrabold text-amber-950">Caretaker Portal</span>
+                <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-full">
+                  Family Care
+                </span>
+              </div>
+            )}
+
+            {portal === 'landing' && (
+              <div className="flex items-center gap-2 text-xs font-medium text-stone-500">
+                <span>Cognitive Care & Dementia Platform</span>
+              </div>
+            )}
+          </div>
 
           {/* Controls: Language, Accessibility, Offline Status, Demo Guide */}
           <div className="flex items-center gap-2">
@@ -139,7 +167,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition"
                 >
                   <WifiOff className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                  <span className="hidden md:inline">Offline Mode</span>
+                  <span className="hidden md:inline">{getTranslation('offlineMode', language)}</span>
                   {pendingSyncCount > 0 && (
                     <span className="ml-0.5 bg-amber-600 text-white px-1.5 py-0.2 rounded-full font-bold text-[10px]">
                       {pendingSyncCount}
@@ -154,7 +182,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition"
                 >
                   <Wifi className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="hidden md:inline">Online</span>
+                  <span className="hidden md:inline">{getTranslation('online', language)}</span>
                   {pendingSyncCount > 0 ? (
                     <span
                       onClick={(e) => {
@@ -167,7 +195,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       Sync {pendingSyncCount}
                     </span>
                   ) : (
-                    <span className="text-emerald-700 text-[11px]">Synced</span>
+                    <span className="text-emerald-700 text-[11px]">{getTranslation('synced', language)}</span>
                   )}
                 </button>
               )}
@@ -185,6 +213,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <option value="en">English</option>
                 <option value="hi">हिंदी (Hindi)</option>
                 <option value="as">অসমীয়া (Assamese)</option>
+                <option value="bn">বাংলা (Bengali)</option>
+                <option value="kn">ಕನ್ನಡ (Kannada)</option>
               </select>
             </div>
 
@@ -198,7 +228,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'bg-amber-100 text-amber-900 border-amber-300'
                     : 'bg-stone-100 text-stone-700 border-stone-200 hover:bg-stone-200/60'
                 }`}
-                title="Elderly Accessibility Features"
+                title={getTranslation('elderlyAccessibility', language)}
               >
                 <Type className="w-4 h-4" />
               </button>
@@ -209,14 +239,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="absolute right-0 mt-2 w-64 bg-white border border-stone-200 rounded-2xl shadow-xl p-3 z-50 text-stone-800 text-xs space-y-2 animate-in fade-in"
                 >
                   <div className="font-bold text-stone-900 pb-1 border-b border-stone-100 flex items-center justify-between">
-                    <span>Elderly Accessibility</span>
-                    <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">Friendly</span>
+                    <span>{getTranslation('elderlyAccessibility', language)}</span>
+                    <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">{getTranslation('friendlyBadge', language)}</span>
                   </div>
 
                   <label className="flex items-center justify-between p-1.5 hover:bg-stone-50 rounded-lg cursor-pointer">
                     <span className="flex items-center gap-2">
                       <Type className="w-4 h-4 text-stone-600" />
-                      Large Font Mode
+                      {getTranslation('largeText', language)}
                     </span>
                     <input
                       type="checkbox"
@@ -231,7 +261,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <label className="flex items-center justify-between p-1.5 hover:bg-stone-50 rounded-lg cursor-pointer">
                     <span className="flex items-center gap-2">
                       <Contrast className="w-4 h-4 text-stone-600" />
-                      High Contrast Mode
+                      {getTranslation('highContrast', language)}
                     </span>
                     <input
                       type="checkbox"
@@ -250,7 +280,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       ) : (
                         <VolumeX className="w-4 h-4 text-stone-400" />
                       )}
-                      Audio Chimes & Cues
+                      {getTranslation('audioChimesCues', language)}
                     </span>
                     <input
                       type="checkbox"
@@ -271,7 +301,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="w-full text-left flex items-center gap-1.5 text-stone-500 hover:text-red-600 p-1 rounded transition text-[11px]"
                     >
                       <RotateCcw className="w-3 h-3" />
-                      Reset to Default Demo State
+                      {getTranslation('resetToDemo', language)}
                     </button>
                   </div>
                 </div>
@@ -287,12 +317,89 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ? 'bg-amber-600 text-white shadow-xs'
                   : 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100'
               }`}
-              title="Toggle 16-Step Guided Product Walkthrough"
+              title="Toggle Guided Product Walkthrough"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-700 fill-amber-300" />
-              <span className="hidden lg:inline">Product Tour</span>
-              <span className="lg:hidden">Tour</span>
+              <span className="hidden xl:inline">{getTranslation('productTour', language)}</span>
+              <span className="xl:hidden">{getTranslation('tour', language)}</span>
             </button>
+
+            {/* Caregiver Authentication & User Profile */}
+            <div className="relative pl-1 border-l border-stone-200 flex items-center gap-1.5">
+              {currentUser ? (
+                <div className="relative">
+                  <button
+                    id="nav-user-profile-btn"
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-2 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200/80 border border-stone-200 text-xs font-bold text-stone-800 transition shadow-2xs"
+                    title="Caregiver Profile & Settings"
+                  >
+                    <div className="w-6 h-6 rounded-lg bg-stone-900 text-white flex items-center justify-center text-[11px] font-black">
+                      {currentUser.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="hidden sm:inline truncate max-w-[100px]">{currentUser.name}</span>
+                  </button>
+
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white border border-stone-200 rounded-2xl shadow-xl p-3 z-50 text-xs space-y-2 animate-in fade-in">
+                      <div className="pb-2 border-b border-stone-100">
+                        <div className="flex items-center gap-1.5 text-amber-800 font-bold">
+                          <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+                          <span>{getTranslation('caregiverAccount', language)}</span>
+                        </div>
+                        <p className="font-extrabold text-stone-900 text-sm mt-0.5 truncate">{currentUser.name}</p>
+                        <p className="text-[11px] text-stone-500 truncate">{currentUser.email}</p>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          onOpenAuthModal('patient');
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left p-2 hover:bg-amber-50 text-amber-950 rounded-xl font-bold flex items-center gap-2 transition"
+                      >
+                        <User className="w-4 h-4 text-amber-600" />
+                        <span>{getTranslation('switchPatientProfile', language)}</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          onSignOut();
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left p-2 hover:bg-rose-50 text-rose-700 rounded-xl font-bold flex items-center gap-2 transition"
+                      >
+                        <LogOut className="w-4 h-4 text-rose-600" />
+                        <span>{getTranslation('signOut', language)}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  id="nav-login-btn"
+                  onClick={() => onOpenAuthModal('caregiver')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold bg-stone-900 hover:bg-black text-white shadow-xs transition"
+                  title="Caregiver Sign In"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline">{getTranslation('signIn', language)}</span>
+                </button>
+              )}
+
+              {/* Quick Patient Switch button (Easy handover to elderly user) */}
+              {currentView === 'caregiver' && (
+                <button
+                  id="nav-patient-handover-btn"
+                  onClick={() => onNavigate('patient')}
+                  className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-100/70 hover:bg-amber-200/80 text-amber-900 border border-amber-300 transition"
+                  title={`Hand over device to ${patient.name}`}
+                >
+                  <User className="w-3.5 h-3.5 text-amber-700" />
+                  <span>{patient.name.split(' ')[0]}</span>
+                </button>
+              )}
+            </div>
           </div>
 
         </div>

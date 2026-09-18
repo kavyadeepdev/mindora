@@ -11,7 +11,7 @@ export class AudioSpeechService {
   /**
    * Speak a friendly text message to the elderly user
    */
-  static speak(text: string, language: 'en' | 'hi' | 'as' = 'en', onEnd?: () => void): void {
+  static speak(text: string, language: 'en' | 'hi' | 'as' | 'bn' | 'kn' = 'en', onEnd?: () => void): void {
     if (!this.synth || typeof window === 'undefined') {
       if (onEnd) setTimeout(onEnd, 1000);
       return;
@@ -25,8 +25,12 @@ export class AudioSpeechService {
 
       if (language === 'hi') {
         utterance.lang = 'hi-IN';
+      } else if (language === 'bn') {
+        utterance.lang = 'bn-IN';
+      } else if (language === 'kn') {
+        utterance.lang = 'kn-IN';
       } else if (language === 'as') {
-        // Many browsers don't have native Assamese TTS, fallback smoothly to Bengali/Hindi or English
+        // Fallback smoothly to bn-IN (closely related eastern Indo-Aryan phonetics) for Assamese
         utterance.lang = 'bn-IN';
       } else {
         utterance.lang = 'en-IN';

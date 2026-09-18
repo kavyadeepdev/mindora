@@ -7,6 +7,8 @@ import { PatientHome } from './components/patient/PatientHome';
 import { FamiliarMemories } from './components/patient/FamiliarMemories';
 import { VoiceAssistantModal } from './components/patient/VoiceAssistantModal';
 import { CaregiverDashboard } from './components/caregiver/CaregiverDashboard';
+import { DoctorDashboard } from './components/doctor/DoctorDashboard';
+import { PatientDevicePairing } from './components/patient/PatientDevicePairing';
 import { MemoryMatchGame } from './components/games/MemoryMatchGame';
 import { AttentionChallenge } from './components/games/AttentionChallenge';
 import { PatternRecognition } from './components/games/PatternRecognition';
@@ -19,62 +21,154 @@ import {
   Reminder, 
   PatientProfile, 
   CaregiverProfile,
-  GameSession,
-  AlertItem
+  DoctorProfile,
+  GameSession, 
+  AlertItem,
+  SubdomainPortal
 } from './types';
 import { StorageService } from './services/storage';
 import { AudioSpeechService } from './services/audioSpeech';
+import { AuthModal } from './components/common/AuthModal';
+import { authService } from './services/auth';
+import { detectPortalFromUrl, navigateToPortal } from './utils/subdomain';
+import { Globe, Stethoscope, ShieldCheck, Heart, ExternalLink } from 'lucide-react';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'landing' | 'patient' | 'caregiver' | 'game' | 'memories'>('landing');
+  // Subdomain & Portal State
+  const [portal, setPortal] = useState<SubdomainPortal>(() => detectPortalFromUrl());
+  const [currentView, setCurrentView] = useState<'landing' | 'patient' | 'caregiver' | 'doctor' | 'game' | 'memories'>(() => {
+    const p = detectPortalFromUrl();
+    if (p === 'doctor') return 'doctor';
+    if (p === 'caretaker') return 'caregiver';
+    if (p === 'patient') return 'patient';
+    return 'landing';
+  });
+
   const [activeGame, setActiveGame] = useState<GameType>('memory');
+  const [activeRoundsCount, setActiveRoundsCount] = useState<number>(5);
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
-  const [showDemoGuide, setShowDemoGuide] = useState(true);
+  const [showDemoGuide, setShowDemoGuide] = useState(false);
   const [demoCurrentStep, setDemoCurrentStep] = useState(1);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role?: string } | null>({
+    name: 'Dr. Debojit Sarma',
+    email: 'dr.debojit@mindora.care',
+    role: 'doctor'
+  });
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<'patient' | 'caregiver' | 'doctor'>('patient');
+
   // App persistent state
-  const [patient, setPatient] = useState<PatientProfile>(StorageService.getPatient());
-  const [caregiver, setCaregiver] = useState<CaregiverProfile>(StorageService.getCaregiver());
-  const [reminders, setReminders] = useState<Reminder[]>(StorageService.getReminders());
-  const [sessions, setSessions] = useState<GameSession[]>(StorageService.getSessions());
-  const [alerts, setAlerts] = useState<AlertItem[]>(StorageService.getAlerts());
-  const [accessibility, setAccessibility] = useState<AccessibilitySettings>(StorageService.getAccessibility());
-  const [isOffline, setIsOffline] = useState<boolean>(StorageService.isOffline());
-  const [language, setLanguage] = useState<Language>(StorageService.getPatient().language);
+  const [patients, setPatients] = useState<PatientProfile[]>(() => StorageService.getAllPatients());
+  const [patient, setPatient] = useState<PatientProfile>(() => StorageService.getActivePatient());
+  const [caregiver, setCaregiver] = useState<CaregiverProfile>(() => StorageService.getCaregiver());
+  const [doctor, setDoctor] = useState<DoctorProfile>(() => StorageService.getDoctor());
+  const [reminders, setReminders] = useState<Reminder[]>(() => StorageService.getReminders());
+  const [sessions, setSessions] = useState<GameSession[]>(() => StorageService.getSessions());
+  const [alerts, setAlerts] = useState<AlertItem[]>(() => StorageService.getAlerts());
+  const [accessibility, setAccessibility] = useState<AccessibilitySettings>(() => StorageService.getAccessibility());
+  const [isOffline, setIsOffline] = useState<boolean>(() => StorageService.isOffline());
+  const [language, setLanguage] = useState<Language>(() => StorageService.getActivePatient().language);
+
+  // WhatsApp Web-style pairing state for patient device
+  const [isPaired, setIsPaired] = useState<boolean>(() => Boolean(StorageService.getCurrentPairedDevice()));
 
   // Sync state from storage
   const refreshStorageData = () => {
-    setPatient(StorageService.getPatient());
+    const updatedPatients = StorageService.getAllPatients();
+    setPatients(updatedPatients);
+    setPatient(StorageService.getActivePatient());
     setCaregiver(StorageService.getCaregiver());
+    setDoctor(StorageService.getDoctor());
     setReminders(StorageService.getReminders());
     setSessions(StorageService.getSessions());
     setAlerts(StorageService.getAlerts());
     setAccessibility(StorageService.getAccessibility());
     setIsOffline(StorageService.isOffline());
+    setIsPaired(Boolean(StorageService.getCurrentPairedDevice()));
   };
+
+  // Subdomain & popstate synchronization
+  useEffect(() => {
+    const syncFromUrl = () => {
+      const detected = detectPortalFromUrl();
+      setPortal(detected);
+      if (detected === 'doctor') setCurrentView('doctor');
+      else if (detected === 'caretaker') setCurrentView('caregiver');
+      else if (detected === 'patient') setCurrentView('patient');
+      else setCurrentView('landing');
+    };
+
+    window.addEventListener('popstate', syncFromUrl);
+    window.addEventListener('mindora-portal-change', syncFromUrl);
+
+    return () => {
+      window.removeEventListener('popstate', syncFromUrl);
+      window.removeEventListener('mindora-portal-change', syncFromUrl);
+    };
+  }, []);
 
   useEffect(() => {
     refreshStorageData();
+
+    // Check active Better Auth session
+    authService.getSession().then((sess) => {
+      if (sess?.user) {
+        setCurrentUser({ 
+          name: sess.user.name, 
+          email: sess.user.email,
+          role: (sess.user as any).role || 'caregiver'
+        });
+      }
+    });
+
+    // Hydrate from Fastify / Neon backend if online
+    StorageService.hydrateFromBackend().then(() => {
+      refreshStorageData();
+    });
 
     // Listen to window online/offline events
     const handleOnline = () => {
       StorageService.setOfflineOverride(false);
       setIsOffline(false);
+      StorageService.syncPendingActivities().then(() => refreshStorageData());
     };
     const handleOffline = () => {
       StorageService.setOfflineOverride(true);
       setIsOffline(true);
     };
 
+    const handleAdaptiveChange = () => {
+      refreshStorageData();
+    };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('mindora-adaptive-change', handleAdaptiveChange);
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('mindora-adaptive-change', handleAdaptiveChange);
     };
   }, []);
+
+  // Portal switcher handler
+  const handleSwitchPortal = (target: SubdomainPortal) => {
+    setPortal(target);
+    navigateToPortal(target);
+    if (target === 'doctor') {
+      setCurrentView('doctor');
+    } else if (target === 'caretaker') {
+      setCurrentView('caregiver');
+    } else if (target === 'patient') {
+      setCurrentView('patient');
+    } else {
+      setCurrentView('landing');
+    }
+  };
 
   // Handle accessibility setting updates
   const handleAccessibilityChange = (newSettings: AccessibilitySettings) => {
@@ -97,14 +191,38 @@ export default function App() {
     setIsOffline(nextState);
   };
 
-  // Manual cloud sync
+  // Manual cloud sync to Fastify backend
   const handleSync = async () => {
     setIsSyncing(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    StorageService.syncPendingSessions();
+    await StorageService.syncPendingActivities();
     refreshStorageData();
     setIsSyncing(false);
     AudioSpeechService.playChime('success');
+  };
+
+  // Auth & Persona Handlers
+  const handleOpenAuthModal = (tab: 'patient' | 'caregiver' | 'doctor' = 'patient') => {
+    setAuthModalTab(tab);
+    setShowAuthModal(true);
+  };
+
+  const handleLoginSuccess = (user: { name: string; email: string }) => {
+    setCurrentUser(user);
+    setShowAuthModal(false);
+    refreshStorageData();
+  };
+
+  const handleSignOut = async () => {
+    await authService.signOut();
+    setCurrentUser(null);
+    AudioSpeechService.playChime('tap');
+  };
+
+  // Select active patient from multi-patient cohort
+  const handleSelectPatient = (selectedPatient: PatientProfile) => {
+    StorageService.setActivePatientId(selectedPatient.id);
+    setPatient(selectedPatient);
+    refreshStorageData();
   };
 
   // Reminder toggle
@@ -128,9 +246,10 @@ export default function App() {
     setReminders(updated);
   };
 
-  // Launch a game
-  const handleStartGame = (gameType: GameType) => {
+  // Launch a game with doctor-prescribed rounds
+  const handleStartGame = (gameType: GameType, roundsCount?: number) => {
     setActiveGame(gameType);
+    setActiveRoundsCount(roundsCount || 5);
     setCurrentView('game');
   };
 
@@ -139,83 +258,56 @@ export default function App() {
     setDemoCurrentStep(stepNumber);
     switch (stepNumber) {
       case 1:
-        // STEP 1: Open patient mode
-        setCurrentView('patient');
+        handleSwitchPortal('patient');
         break;
       case 2:
-        // STEP 2: Show personalized greeting
-        setCurrentView('patient');
+        handleSwitchPortal('patient');
         AudioSpeechService.speak(`Good morning, ${patient.name}! You are doing wonderful today.`, language);
         break;
       case 3:
-        // STEP 3: Start Memory Match
-        setActiveGame('memory');
-        setCurrentView('game');
-        break;
       case 4:
-        // STEP 4: Complete the game
-        setActiveGame('memory');
-        setCurrentView('game');
-        break;
       case 5:
-        // STEP 5: Show accuracy and response time
         setActiveGame('memory');
+        setActiveRoundsCount(5);
         setCurrentView('game');
         break;
       case 6:
-        // STEP 6: Adaptive engine changes difficulty
-        setCurrentView('caregiver');
+        handleSwitchPortal('caretaker');
         break;
       case 7:
-        // STEP 7: Show personalized encouragement
-        setCurrentView('patient');
-        AudioSpeechService.speak("You did wonderful, Anima. Your memory focus is very steady today.", language);
+        handleSwitchPortal('patient');
+        AudioSpeechService.speak("You did wonderful. Your memory focus is very steady today.", language);
         break;
       case 8:
-        // STEP 8: Ask voice assistant: "When is my medicine?"
-        setCurrentView('patient');
+        handleSwitchPortal('patient');
         setShowVoiceAssistant(true);
         break;
       case 9:
-        // STEP 9: Show reminder
         setShowVoiceAssistant(false);
-        setCurrentView('patient');
+        handleSwitchPortal('patient');
         break;
       case 10:
-        // STEP 10: Switch to caregiver dashboard
-        setCurrentView('caregiver');
-        break;
       case 11:
-        // STEP 11: Show today's completed session
-        setCurrentView('caregiver');
-        break;
       case 12:
-        // STEP 12: Show 7-day performance trend
-        setCurrentView('caregiver');
-        break;
       case 13:
-        // STEP 13: Show adaptive difficulty history
-        setCurrentView('caregiver');
+        handleSwitchPortal('caretaker');
         break;
       case 14:
-        // STEP 14: Toggle Offline Mode
         StorageService.setOfflineOverride(true);
         setIsOffline(true);
-        setCurrentView('patient');
+        handleSwitchPortal('patient');
         break;
       case 15:
-        // STEP 15: Complete another game offline
         setActiveGame('attention');
+        setActiveRoundsCount(5);
         setCurrentView('game');
         break;
       case 16:
-        // STEP 16: Show "3 activities ready to sync"
-        // Add offline dummy sessions if needed so pending count is visible
         refreshStorageData();
-        setCurrentView('caregiver');
+        handleSwitchPortal('caretaker');
         break;
       default:
-        setCurrentView('patient');
+        handleSwitchPortal('patient');
     }
   };
 
@@ -237,10 +329,16 @@ export default function App() {
         />
       )}
 
-      {/* Global Navigation Bar */}
+      {/* Global Navigation Bar (No overview/patient/caretaker mode buttons) */}
       <Navbar
+        portal={portal}
         currentView={currentView === 'memories' ? 'patient' : currentView}
-        onNavigate={(v) => setCurrentView(v)}
+        onNavigate={(v) => {
+          if (v === 'doctor') handleSwitchPortal('doctor');
+          else if (v === 'caregiver') handleSwitchPortal('caretaker');
+          else if (v === 'patient') handleSwitchPortal('patient');
+          else handleSwitchPortal('landing');
+        }}
         language={language}
         onLanguageChange={handleLanguageChange}
         accessibility={accessibility}
@@ -252,6 +350,11 @@ export default function App() {
         isSyncing={isSyncing}
         showDemoGuide={showDemoGuide}
         onToggleDemoGuide={() => setShowDemoGuide(!showDemoGuide)}
+        currentUser={currentUser}
+        onOpenAuthModal={handleOpenAuthModal}
+        onSignOut={handleSignOut}
+        patient={patient}
+        onSwitchPortal={handleSwitchPortal}
       />
 
       {/* Strict Non-Diagnostic Medical Disclaimer Banner */}
@@ -259,34 +362,32 @@ export default function App() {
 
       {/* Main Content Router */}
       <main className="flex-1">
+        {/* LANDING PAGE PORTAL */}
         {currentView === 'landing' && (
           <LandingPage
-            onStartPatient={() => setCurrentView('patient')}
-            onOpenCaregiver={() => setCurrentView('caregiver')}
+            onStartPatient={() => handleSwitchPortal('patient')}
+            onOpenCaregiver={() => handleSwitchPortal('caretaker')}
+            onOpenDoctor={() => handleSwitchPortal('doctor')}
             onSelectDemoStep={handleSelectDemoStep}
             language={language}
           />
         )}
 
-        {currentView === 'patient' && (
-          <PatientHome
-            patient={patient}
-            reminders={reminders}
-            onToggleReminder={handleToggleReminder}
-            onStartGame={handleStartGame}
-            onOpenVoiceAssistant={() => setShowVoiceAssistant(true)}
-            onOpenMemories={() => setCurrentView('memories')}
+        {/* DOCTOR CLINICAL CONTROL PORTAL */}
+        {currentView === 'doctor' && (
+          <DoctorDashboard
+            doctor={doctor}
+            patients={patients}
+            activePatient={patient}
+            onSelectPatient={(pid) => {
+              const p = patients.find(x => x.id === pid);
+              if (p) handleSelectPatient(p);
+            }}
             language={language}
           />
         )}
 
-        {currentView === 'memories' && (
-          <FamiliarMemories
-            onBack={() => setCurrentView('patient')}
-            language={language}
-          />
-        )}
-
+        {/* CARETAKER / CAREGIVER PORTAL */}
         {currentView === 'caregiver' && (
           <CaregiverDashboard
             patient={patient}
@@ -300,9 +401,49 @@ export default function App() {
             onSync={handleSync}
             isSyncing={isSyncing}
             language={language}
+            patients={patients}
+            onSelectPatient={(pid) => {
+              const p = patients.find(x => x.id === pid);
+              if (p) handleSelectPatient(p);
+            }}
           />
         )}
 
+        {/* PATIENT PORTAL */}
+        {currentView === 'patient' && (
+          <>
+            {/* If patient screen is not yet paired with doctor/caretaker via WhatsApp Web pattern */}
+            {!isPaired ? (
+              <PatientDevicePairing
+                language={language}
+                onPaired={(device) => {
+                  setIsPaired(true);
+                  refreshStorageData();
+                }}
+              />
+            ) : (
+              <PatientHome
+                patient={patient}
+                reminders={reminders}
+                onToggleReminder={handleToggleReminder}
+                onStartGame={handleStartGame}
+                onOpenVoiceAssistant={() => setShowVoiceAssistant(true)}
+                onOpenMemories={() => setCurrentView('memories')}
+                language={language}
+              />
+            )}
+          </>
+        )}
+
+        {/* PATIENT FAMILIAR MEMORIES VIEW */}
+        {currentView === 'memories' && (
+          <FamiliarMemories
+            onBack={() => setCurrentView('patient')}
+            language={language}
+          />
+        )}
+
+        {/* ACTIVE COGNITIVE ACTIVITY GAME (Prescribed rounds applied) */}
         {currentView === 'game' && (
           <div>
             {activeGame === 'memory' && (
@@ -313,6 +454,7 @@ export default function App() {
                 }}
                 language={language}
                 onFinishGame={refreshStorageData}
+                roundsCount={activeRoundsCount}
               />
             )}
             {activeGame === 'attention' && (
@@ -323,6 +465,7 @@ export default function App() {
                 }}
                 language={language}
                 onFinishGame={refreshStorageData}
+                roundsCount={activeRoundsCount}
               />
             )}
             {activeGame === 'pattern' && (
@@ -333,6 +476,7 @@ export default function App() {
                 }}
                 language={language}
                 onFinishGame={refreshStorageData}
+                roundsCount={activeRoundsCount}
               />
             )}
             {activeGame === 'routine' && (
@@ -343,6 +487,7 @@ export default function App() {
                 }}
                 language={language}
                 onFinishGame={refreshStorageData}
+                roundsCount={activeRoundsCount}
               />
             )}
           </div>
@@ -356,6 +501,7 @@ export default function App() {
           language={language}
           onNavigateGame={(gameType) => {
             setActiveGame(gameType);
+            setActiveRoundsCount(5);
             setCurrentView('game');
           }}
           onViewReminders={() => {
@@ -364,15 +510,90 @@ export default function App() {
         />
       )}
 
+      {/* Accessible Dementia-Friendly Auth & Persona Switcher Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        language={language}
+        onLoginSuccess={handleLoginSuccess}
+        currentPatient={patient}
+        onSelectPatient={handleSelectPatient}
+        initialTab={authModalTab === 'doctor' ? 'caregiver' : authModalTab}
+      />
+
+      {/* Quick Subdomain Switcher Bar for Localhost & Testing */}
+      <aside 
+        aria-label="Subdomain Navigation Switcher"
+        className="fixed bottom-3 right-3 z-50 flex items-center gap-1.5 p-1.5 bg-stone-900/90 backdrop-blur-md rounded-2xl border border-stone-700 shadow-2xl text-[11px] font-medium text-stone-200"
+      >
+        <span className="px-2 py-0.5 text-stone-400 font-semibold border-r border-stone-700 flex items-center gap-1">
+          <Globe className="w-3 h-3 text-stone-400" />
+          Subdomains
+        </span>
+
+        <button
+          onClick={() => handleSwitchPortal('landing')}
+          className={`px-2.5 py-1 rounded-xl transition font-semibold flex items-center gap-1 ${
+            portal === 'landing' 
+              ? 'bg-white text-stone-900 shadow-xs' 
+              : 'hover:bg-stone-800 text-stone-300'
+          }`}
+          title="mindora.app"
+        >
+          Landing
+        </button>
+
+        <button
+          onClick={() => handleSwitchPortal('doctor')}
+          className={`px-2.5 py-1 rounded-xl transition font-semibold flex items-center gap-1 ${
+            portal === 'doctor' 
+              ? 'bg-teal-500 text-white shadow-xs' 
+              : 'hover:bg-stone-800 text-teal-300'
+          }`}
+          title="doctor.mindora.app"
+        >
+          <Stethoscope className="w-3 h-3" />
+          Doctor
+        </button>
+
+        <button
+          onClick={() => handleSwitchPortal('caretaker')}
+          className={`px-2.5 py-1 rounded-xl transition font-semibold flex items-center gap-1 ${
+            portal === 'caretaker' 
+              ? 'bg-amber-600 text-white shadow-xs' 
+              : 'hover:bg-stone-800 text-amber-300'
+          }`}
+          title="caretaker.mindora.app"
+        >
+          <ShieldCheck className="w-3 h-3" />
+          Caretaker
+        </button>
+
+        <button
+          onClick={() => handleSwitchPortal('patient')}
+          className={`px-2.5 py-1 rounded-xl transition font-semibold flex items-center gap-1 ${
+            portal === 'patient' 
+              ? 'bg-rose-500 text-white shadow-xs' 
+              : 'hover:bg-stone-800 text-rose-300'
+          }`}
+          title="patient.mindora.app"
+        >
+          <Heart className="w-3 h-3" />
+          Patient
+        </button>
+      </aside>
+
       {/* Reassuring Footer */}
       <footer className="bg-white border-t border-stone-200 py-6 px-4 text-center text-xs text-stone-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="font-extrabold text-stone-800 font-['Outfit']">MINDORA</span>
-            <span>• A familiar companion for everyday memory, activity and care.</span>
+            <span>• Tripartite Cognitive Care & Clinical Telemetry Platform</span>
           </div>
-          <div className="text-stone-400">
-            Cognitive health, routine assistance & family support
+          <div className="flex items-center gap-4 text-stone-400">
+            <span>doctor.mindora.app</span>
+            <span>caretaker.mindora.app</span>
+            <span>patient.mindora.app</span>
           </div>
         </div>
       </footer>

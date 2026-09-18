@@ -1,4 +1,4 @@
-export type Language = 'en' | 'hi' | 'as'; // English, Hindi, Assamese
+export type Language = 'en' | 'hi' | 'as' | 'bn' | 'kn'; // English, Hindi, Assamese, Bengali, Kannada
 
 export type GameType = 'memory' | 'attention' | 'pattern' | 'routine';
 
@@ -11,9 +11,15 @@ export interface Reminder {
   title: string;
   titleAssamese?: string;
   titleHindi?: string;
+  titleBengali?: string;
+  titleKannada?: string;
   time: string; // e.g. "09:00 AM"
   status: 'pending' | 'completed' | 'missed';
   notes?: string;
+  notesAssamese?: string;
+  notesHindi?: string;
+  notesBengali?: string;
+  notesKannada?: string;
 }
 
 export interface PatientProfile {
@@ -36,6 +42,26 @@ export interface PatientProfile {
   };
   caregiverId: string;
   culturalTheme: string;
+  diagnosis?: string;
+  stage?: string;
+  accessibility?: AccessibilitySettings;
+}
+
+export type GuidedStepType = 'greeting' | 'reminder' | 'activity' | 'celebration';
+
+export interface GuidedPathStep {
+  id: string;
+  stepNumber: number;
+  type: GuidedStepType;
+  title: string;
+  subtitle?: string;
+  completed: boolean;
+  active: boolean;
+  gameType?: GameType;
+  reminderId?: string;
+  roundsCount?: number;
+  iconType?: string;
+  notes?: string;
 }
 
 export interface CaregiverProfile {
@@ -94,7 +120,10 @@ export interface AccessibilitySettings {
 export interface CulturalMemoryItem {
   id: string;
   title: string;
-  titleAssamese: string;
+  titleAssamese?: string;
+  titleHindi?: string;
+  titleBengali?: string;
+  titleKannada?: string;
   category: string;
   description: string;
   emoji: string;
@@ -106,4 +135,50 @@ export interface DemoStep {
   title: string;
   description: string;
   targetView: 'landing' | 'patient' | 'caregiver' | 'game-memory' | 'game-attention' | 'game-pattern' | 'game-routine';
+}
+
+export type SubdomainPortal = 'landing' | 'patient' | 'doctor' | 'caretaker';
+
+export interface DoctorProfile {
+  id: string;
+  name: string;
+  specialty: string;
+  hospital: string;
+  phone: string;
+  email: string;
+  linkedPatientIds: string[];
+}
+
+export interface ActivityPrescriptionItem {
+  gameType: GameType;
+  title: string;
+  enabled: boolean;
+  order: number; // 1, 2, 3, 4
+  rounds: number; // e.g. 3, 5, 7
+  targetFocus: string; // e.g., 'Visual Recall', 'Selective Attention', 'Sequencing'
+  doctorNotes?: string;
+}
+
+export interface PatientActivityPlan {
+  patientId: string;
+  prescribedByDoctorId: string;
+  doctorName: string;
+  lastUpdated: string;
+  clinicalGoal?: string;
+  activities: ActivityPrescriptionItem[];
+}
+
+export interface DevicePairingRequest {
+  id: string;
+  pairCode: string; // e.g. 'MND-842'
+  deviceName: string;
+  browserInfo: string;
+  ipAddress?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'revoked';
+  patientId?: string;
+  patientName?: string;
+  approvedBy?: string;
+  requestedAt: string;
+  approvedAt?: string;
+  token?: string;
 }

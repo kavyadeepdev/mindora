@@ -27,7 +27,7 @@ interface PatientHomeProps {
   patient: PatientProfile;
   reminders: Reminder[];
   onToggleReminder: (reminderId: string) => void;
-  onStartGame: (gameType: 'memory' | 'attention' | 'pattern' | 'routine') => void;
+  onStartGame: (gameType: 'memory' | 'attention' | 'pattern' | 'routine', roundsCount?: number) => void;
   onOpenVoiceAssistant: () => void;
   onOpenMemories: () => void;
   language: Language;
@@ -43,16 +43,19 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
   language
 }) => {
   const [completedMemory, setCompletedMemory] = useState(true);
+  const plan = StorageService.getActivityPlan(patient.id);
 
   const getGreeting = () => {
     if (language === 'as') return `শুভ প্ৰভাত, ${patient.name} 👋`;
     if (language === 'hi') return `सुप्रभात, ${patient.name} 👋`;
+    if (language === 'bn') return `সুপ্রভাত, ${patient.name} 👋`;
+    if (language === 'kn') return `ಶುಭೋದಯ, ${patient.name} 👋`;
     return `Good morning, ${patient.name} 👋`;
   };
 
   const speakGreeting = () => {
     AudioSpeechService.speak(
-      `${getGreeting()}. Today you have 4 gentle activities and your routine reminders. You are doing wonderful.`,
+      `${getGreeting()}. ${getTranslation('greetingWelcome', language)}`,
       language
     );
   };
@@ -75,7 +78,17 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
   const getReminderTitle = (r: Reminder) => {
     if (language === 'as' && r.titleAssamese) return r.titleAssamese;
     if (language === 'hi' && r.titleHindi) return r.titleHindi;
+    if (language === 'bn' && r.titleBengali) return r.titleBengali;
+    if (language === 'kn' && r.titleKannada) return r.titleKannada;
     return r.title;
+  };
+
+  const getReminderNotes = (r: Reminder) => {
+    if (language === 'as' && r.notesAssamese) return r.notesAssamese;
+    if (language === 'hi' && r.notesHindi) return r.notesHindi;
+    if (language === 'bn' && r.notesBengali) return r.notesBengali;
+    if (language === 'kn' && r.notesKannada) return r.notesKannada;
+    return r.notes || '';
   };
 
   return (
@@ -91,7 +104,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             <button
               id="patient-speak-greeting-btn"
               onClick={speakGreeting}
-              className="p-1 text-stone-500 hover:text-amber-800 transition"
+              className="p-1 text-stone-500 hover:text-amber-800 transition cursor-pointer"
               title="Listen aloud"
             >
               <Volume2 className="w-4 h-4" />
@@ -102,7 +115,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             {getGreeting()}
           </h1>
           <p className="text-stone-600 text-base sm:text-lg mt-1 max-w-xl font-medium">
-            Welcome to your calm daily space. Let's spend a few peaceful minutes together.
+            {getTranslation('greetingWelcome', language)}
           </p>
         </div>
 
@@ -118,7 +131,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             </div>
             <div className="text-left">
               <div className="text-xs font-semibold text-amber-100 uppercase tracking-wider">
-                Voice Companion
+                {getTranslation('voiceCompanion', language)}
               </div>
               <div className="text-lg font-black leading-tight">
                 🎙️ {getTranslation('askMindora', language)}
@@ -138,11 +151,11 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             </h2>
           </div>
           <span className="text-base font-extrabold text-amber-800 bg-amber-50 px-3 py-1 rounded-xl border border-amber-200">
-            80% Completed
+            {getTranslation('percentCompleted', language).replace('{percent}', '80')}
           </span>
         </div>
 
-        {/* Visual Progress Bar (as specified in prompt: ████████░░ 80%) */}
+        {/* Visual Progress Bar */}
         <div className="w-full bg-stone-100 rounded-2xl h-4 overflow-hidden p-0.5 border border-stone-200">
           <div
             className="bg-gradient-to-r from-amber-500 to-amber-600 h-full rounded-xl transition-all duration-700"
@@ -150,7 +163,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
           />
         </div>
         <p className="text-stone-500 text-xs sm:text-sm mt-2 font-medium">
-          🌟 Wonderful work, Anima! You completed 4 daily routine steps and your morning memory exercise.
+          🌟 {getTranslation('progressCheer', language).replace('{name}', patient.name)}
         </p>
       </div>
 
@@ -164,122 +177,103 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
               <Brain className="w-5 h-5 text-amber-700" />
               {getTranslation('todaysActivities', language)}
             </h2>
-            <span className="text-xs text-stone-500 font-medium">Adaptive difficulty enabled</span>
+            <span className="text-xs text-stone-500 font-medium">
+              {getTranslation('adaptiveDifficultyEnabled', language)}
+            </span>
           </div>
 
-          {/* Activity 1: Memory Activity */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-stone-200 hover:border-amber-300 transition shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-3xl shrink-0">
-                🧠
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-stone-900">
-                    {getTranslation('memoryActivity', language)}
-                  </h3>
-                  <span className="text-[11px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Completed
-                  </span>
+          {/* Doctor-Prescribed Activities List */}
+          {plan.activities
+            .filter(act => act.enabled)
+            .sort((a, b) => a.order - b.order)
+            .map((act, index) => {
+              const meta = {
+                memory: {
+                  emoji: '🧠',
+                  bg: 'bg-rose-50 border-rose-200',
+                  title: getTranslation('memoryActivity', language),
+                  desc: getTranslation('memoryDesc', language)
+                },
+                attention: {
+                  emoji: '🎯',
+                  bg: 'bg-amber-100 border-amber-300',
+                  title: getTranslation('attentionActivity', language),
+                  desc: getTranslation('attentionDesc', language)
+                },
+                pattern: {
+                  emoji: '🧩',
+                  bg: 'bg-sky-50 border-sky-200',
+                  title: getTranslation('patternActivity', language),
+                  desc: getTranslation('patternDesc', language)
+                },
+                routine: {
+                  emoji: '📋',
+                  bg: 'bg-emerald-50 border-emerald-200',
+                  title: getTranslation('routineActivity', language),
+                  desc: getTranslation('routineDesc', language)
+                }
+              }[act.gameType];
+
+              const roundsLabel = `${act.rounds} ${
+                language === 'as' ? 'ৰাউণ্ড' :
+                language === 'hi' ? 'दौर' :
+                language === 'bn' ? 'রাউন্ড' :
+                language === 'kn' ? 'ಸುತ್ತುಗಳು' : 'Rounds'
+              }`;
+
+              const isFirst = index === 0;
+
+              return (
+                <div
+                  key={act.gameType}
+                  className={`bg-white rounded-3xl p-5 sm:p-6 border-2 transition shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+                    isFirst ? 'border-amber-400 bg-amber-50/15' : 'border-stone-200 hover:border-amber-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center text-3xl shrink-0 ${meta.bg}`}>
+                      {meta.emoji}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-lg font-bold text-stone-900">
+                          {meta.title}
+                        </h3>
+                        <span className="text-[11px] font-extrabold bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full border border-amber-200">
+                          {roundsLabel}
+                        </span>
+                        {isFirst && (
+                          <span className="text-[11px] font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">
+                            ○ {getTranslation('upNext', language)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-stone-600 text-sm mt-0.5">
+                        {meta.desc}
+                      </p>
+                      {act.doctorNotes && (
+                        <p className="text-xs text-teal-800 font-medium mt-1">
+                          🩺 {act.doctorNotes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    id={`patient-start-${act.gameType}-btn`}
+                    onClick={() => onStartGame(act.gameType, act.rounds)}
+                    className={`w-full sm:w-auto px-6 py-3.5 rounded-2xl font-extrabold text-base transition flex items-center justify-center gap-2 cursor-pointer shrink-0 ${
+                      isFirst
+                        ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm'
+                        : 'bg-stone-100 hover:bg-stone-200 text-stone-800'
+                    }`}
+                  >
+                    <span>{getTranslation('start', language)}</span>
+                    <Play className={`w-4 h-4 ${isFirst ? 'fill-white' : ''}`} />
+                  </button>
                 </div>
-                <p className="text-stone-600 text-sm mt-0.5">
-                  Familiar flowers & objects from Anima's Assam garden.
-                </p>
-              </div>
-            </div>
-
-            <button
-              id="patient-start-memory-btn"
-              onClick={() => onStartGame('memory')}
-              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-sm transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
-            >
-              <span>Play Again</span>
-              <Play className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Activity 2: Attention Activity */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-amber-300/80 bg-amber-50/20 hover:border-amber-400 transition shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-3xl shrink-0">
-                🎯
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-stone-900">
-                    {getTranslation('attentionActivity', language)}
-                  </h3>
-                  <span className="text-[11px] font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">
-                    ○ Up Next
-                  </span>
-                </div>
-                <p className="text-stone-600 text-sm mt-0.5">
-                  Spot and tap all the red items with calm focus.
-                </p>
-              </div>
-            </div>
-
-            <button
-              id="patient-start-attention-btn"
-              onClick={() => onStartGame('attention')}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-base shadow-sm transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
-            >
-              <span>{getTranslation('start', language)}</span>
-              <Play className="w-4 h-4 fill-white" />
-            </button>
-          </div>
-
-          {/* Activity 3: Pattern Activity */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-stone-200 hover:border-amber-300 transition shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-center text-3xl shrink-0">
-                🧩
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-stone-900">
-                  {getTranslation('patternActivity', language)}
-                </h3>
-                <p className="text-stone-600 text-sm mt-0.5">
-                  Traditional Gamosa border & sequence recognition.
-                </p>
-              </div>
-            </div>
-
-            <button
-              id="patient-start-pattern-btn"
-              onClick={() => onStartGame('pattern')}
-              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-sm transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
-            >
-              <span>{getTranslation('start', language)}</span>
-              <Play className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Activity 4: Daily Routine Recall */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-stone-200 hover:border-amber-300 transition shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-3xl shrink-0">
-                📋
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-stone-900">
-                  {getTranslation('routineActivity', language)}
-                </h3>
-                <p className="text-stone-600 text-sm mt-0.5">
-                  Anima's morning routine reconstruction.
-                </p>
-              </div>
-            </div>
-
-            <button
-              id="patient-start-routine-btn"
-              onClick={() => onStartGame('routine')}
-              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-sm transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
-            >
-              <span>{getTranslation('start', language)}</span>
-              <Play className="w-3.5 h-3.5" />
-            </button>
-          </div>
+              );
+            })}
 
           {/* Familiar Memories Card Banner */}
           <div 
@@ -293,7 +287,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
                   {getTranslation('familiarMemories', language)}
                 </h3>
                 <p className="text-xs text-stone-600">
-                  Explore familiar photos, tea gardens, traditional crafts & festive melodies
+                  {getTranslation('familiarMemoriesBannerDesc', language)}
                 </p>
               </div>
             </div>
@@ -309,7 +303,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
               {getTranslation('reminders', language)}
             </h2>
             <span className="text-xs font-semibold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-              Today's Schedule
+              {getTranslation('todaysSchedule', language)}
             </span>
           </div>
 
@@ -317,6 +311,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
           <div className="space-y-3">
             {reminders.map((rem) => {
               const isDone = rem.status === 'completed';
+              const notesText = getReminderNotes(rem);
 
               return (
                 <div
@@ -339,15 +334,15 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
                         </span>
                         {isDone && (
                           <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-0.5">
-                            <CheckCircle2 className="w-3 h-3" /> Done
+                            <CheckCircle2 className="w-3 h-3" /> {getTranslation('done', language)}
                           </span>
                         )}
                       </div>
                       <h3 className={`font-bold text-base mt-1 ${isDone ? 'line-through text-stone-500' : 'text-stone-900'}`}>
                         {getReminderTitle(rem)}
                       </h3>
-                      {rem.notes && (
-                        <p className="text-xs text-stone-500 mt-0.5 line-clamp-1">{rem.notes}</p>
+                      {notesText && (
+                        <p className="text-xs text-stone-500 mt-0.5 line-clamp-1">{notesText}</p>
                       )}
                     </div>
                   </div>
@@ -368,10 +363,10 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
                     {isDone ? (
                       <>
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                        <span>Completed</span>
+                        <span>{getTranslation('completed', language)}</span>
                       </>
                     ) : (
-                      <span>Mark Done</span>
+                      <span>{getTranslation('markDone', language)}</span>
                     )}
                   </button>
                 </div>
@@ -383,7 +378,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
           <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-xs text-amber-950 flex items-start gap-2.5">
             <Heart className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
             <p className="leading-relaxed font-medium">
-              Take your time with every activity. There is no rush, no countdown pressure, and no wrong answers. Everything is here to support your daily rhythm.
+              {getTranslation('reassuranceNote', language)}
             </p>
           </div>
         </div>
