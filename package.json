@@ -1,0 +1,22 @@
+{
+  "name": "mindora",
+  "private": true,
+  "description": "Mindora monorepo",
+  "workspaces": [
+    "frontend",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "clean": "turbo clean",
+    "dev:frontend": "turbo dev --filter=@mindora/frontend",
+    "build:frontend": "turbo build --filter=@mindora/frontend",
+    "lint:frontend": "turbo lint --filter=@mindora/frontend"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.4"
+  },
+  "packageManager": "bun@1.4.0"
+}
