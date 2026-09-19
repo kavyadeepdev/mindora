@@ -694,10 +694,10 @@ export class StorageService {
       lastUpdated: '18 Sep 2026',
       clinicalGoal: 'Gentle cognitive engagement and routine memory support.',
       activities: [
-        { gameType: 'memory', title: 'Memory Match', enabled: true, order: 1, rounds: 5, targetFocus: 'Visual Association' },
-        { gameType: 'attention', title: 'Attention Challenge', enabled: true, order: 2, rounds: 5, targetFocus: 'Selective Focus' },
-        { gameType: 'pattern', title: 'Pattern Recognition', enabled: true, order: 3, rounds: 5, targetFocus: 'Sequence Prediction' },
-        { gameType: 'routine', title: 'Daily Routine Recall', enabled: true, order: 4, rounds: 5, targetFocus: 'Daily Task Sequencing' }
+        { gameType: 'memory', title: 'Memory Match', enabled: true, order: 1, rounds: 3, targetFocus: 'Visual Association' },
+        { gameType: 'attention', title: 'Attention Challenge', enabled: true, order: 2, rounds: 3, targetFocus: 'Selective Focus' },
+        { gameType: 'pattern', title: 'Pattern Recognition', enabled: true, order: 3, rounds: 3, targetFocus: 'Sequence Prediction' },
+        { gameType: 'routine', title: 'Daily Routine Recall', enabled: true, order: 4, rounds: 3, targetFocus: 'Daily Task Sequencing' }
       ]
     };
     return fallback;

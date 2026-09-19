@@ -47,7 +47,7 @@ export default function App() {
   });
 
   const [activeGame, setActiveGame] = useState<GameType>('memory');
-  const [activeRoundsCount, setActiveRoundsCount] = useState<number>(5);
+  const [activeRoundsCount, setActiveRoundsCount] = useState<number>(3);
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
   const [showDemoGuide, setShowDemoGuide] = useState(false);
   const [demoCurrentStep, setDemoCurrentStep] = useState(1);
@@ -272,8 +272,87 @@ export default function App() {
   // Launch a game with doctor-prescribed rounds
   const handleStartGame = (gameType: GameType, roundsCount?: number) => {
     setActiveGame(gameType);
-    setActiveRoundsCount(roundsCount || 5);
+    setActiveRoundsCount(roundsCount || 3);
     setCurrentView('game');
+  };
+
+  // Showcase Skip Handlers
+  const handleSkipCurrentActivity = () => {
+    const nowStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    StorageService.addSession({
+      id: `sess-${Date.now()}`,
+      patientId: patient.id,
+      gameType: activeGame,
+      gameTitle: activeGame === 'memory' ? 'Memory Match' : activeGame === 'attention' ? 'Attention Challenge' : activeGame === 'pattern' ? 'Pattern Recognition' : 'Daily Routine Recall',
+      score: 95,
+      accuracy: 100,
+      responseTime: 3.2,
+      attempts: 1,
+      difficulty: 2,
+      timestamp: new Date().toISOString(),
+      dateFormatted: nowStr,
+      completed: true,
+      synced: !StorageService.isOffline(),
+      notes: 'Showcase quick pass: Activity successfully completed with great focus.'
+    });
+
+    const currentFlow = StorageService.getPatientFlowState(patient.id);
+    const plan = StorageService.getActivityPlan(patient.id);
+    const activities = plan.activities.filter(a => a.enabled).sort((a, b) => a.order - b.order);
+    const nextIdx = (currentFlow.activityIndex ?? 0) + 1;
+
+    if (nextIdx < activities.length) {
+      StorageService.savePatientFlowState(patient.id, {
+        ...currentFlow,
+        step: 'activity-intro',
+        activityIndex: nextIdx
+      });
+    } else {
+      StorageService.savePatientFlowState(patient.id, {
+        ...currentFlow,
+        step: 'reminders',
+        reminderIndex: 0
+      });
+    }
+
+    refreshStorageData();
+    setCurrentView('patient');
+  };
+
+  const handleSkipAllActivities = () => {
+    const nowStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const currentFlow = StorageService.getPatientFlowState(patient.id);
+    const plan = StorageService.getActivityPlan(patient.id);
+    const activities = plan.activities.filter(a => a.enabled).sort((a, b) => a.order - b.order);
+
+    activities.forEach((act, idx) => {
+      StorageService.addSession({
+        id: `sess-${Date.now()}-${idx}`,
+        patientId: patient.id,
+        gameType: act.gameType,
+        gameTitle: act.title,
+        score: 94,
+        accuracy: 96,
+        responseTime: 3.5,
+        attempts: 1,
+        difficulty: 2,
+        timestamp: new Date().toISOString(),
+        dateFormatted: nowStr,
+        completed: true,
+        synced: !StorageService.isOffline(),
+        notes: 'Showcase quick pass: Prescribed activity completed successfully.'
+      });
+    });
+
+    StorageService.savePatientFlowState(patient.id, {
+      ...currentFlow,
+      step: 'reminders',
+      activityIndex: activities.length > 0 ? activities.length - 1 : 0,
+      reminderIndex: 0
+    });
+
+    refreshStorageData();
+    setCurrentView('patient');
   };
 
   // 16-Step Product Walkthrough Jump Handler
@@ -484,6 +563,8 @@ export default function App() {
                 language={language}
                 onFinishGame={refreshStorageData}
                 roundsCount={activeRoundsCount}
+                onSkipCurrent={handleSkipCurrentActivity}
+                onSkipAll={handleSkipAllActivities}
               />
             )}
             {activeGame === 'attention' && (
@@ -495,6 +576,8 @@ export default function App() {
                 language={language}
                 onFinishGame={refreshStorageData}
                 roundsCount={activeRoundsCount}
+                onSkipCurrent={handleSkipCurrentActivity}
+                onSkipAll={handleSkipAllActivities}
               />
             )}
             {activeGame === 'pattern' && (
@@ -506,6 +589,8 @@ export default function App() {
                 language={language}
                 onFinishGame={refreshStorageData}
                 roundsCount={activeRoundsCount}
+                onSkipCurrent={handleSkipCurrentActivity}
+                onSkipAll={handleSkipAllActivities}
               />
             )}
             {activeGame === 'routine' && (
@@ -517,6 +602,8 @@ export default function App() {
                 language={language}
                 onFinishGame={refreshStorageData}
                 roundsCount={activeRoundsCount}
+                onSkipCurrent={handleSkipCurrentActivity}
+                onSkipAll={handleSkipAllActivities}
               />
             )}
           </div>

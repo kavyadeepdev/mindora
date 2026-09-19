@@ -224,7 +224,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
           gameType: gtype,
           culturalTheme: res.data.culturalTheme,
           reasoning: res.data.reasoning,
-          suggestedRounds: res.data.suggestedRounds || 5,
+          suggestedRounds: res.data.suggestedRounds || 3,
           suggestedDifficulty: res.data.suggestedDifficulty || 2,
           encouragement: res.data.encouragement,
           source: res.data.source,
@@ -248,7 +248,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
           ...a,
           enabled: true,
           order: 1,
-          rounds: recommendation.suggestedRounds || 5,
+          rounds: recommendation.suggestedRounds || 3,
           doctorNotes: `Approved by Dr. ${doctor.name}: ${recommendation.reasoning}`,
         };
       }

@@ -72,15 +72,15 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
       gameType: 'memory' as GameType,
       enabled: true,
       order: 1,
-      rounds: 5,
+      rounds: 3,
       targetFocus: 'Visual memory and familiar everyday recall',
-      doctorNotes: '5 gentle rounds to encourage recall of familiar objects without rush.'
+      doctorNotes: '3 gentle rounds to encourage recall of familiar objects without rush.'
     },
     {
       gameType: 'pattern' as GameType,
       enabled: true,
       order: 2,
-      rounds: 5,
+      rounds: 3,
       targetFocus: 'Pattern and sequence recognition',
       doctorNotes: 'Observe the calm color sequence and find the matching item.'
     }
@@ -388,6 +388,67 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
     }
   };
 
+  const handleSkipCurrentActivity = () => {
+    AudioSpeechService.playChime('tap');
+    const nowStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    StorageService.addSession({
+      id: `sess-${Date.now()}`,
+      patientId: patient.id,
+      gameType: currentActivity.gameType,
+      gameTitle: getGameTitle(currentActivity.gameType),
+      score: 95,
+      accuracy: 100,
+      responseTime: 3.2,
+      attempts: 1,
+      difficulty: 2,
+      timestamp: new Date().toISOString(),
+      dateFormatted: nowStr,
+      completed: true,
+      synced: !StorageService.isOffline(),
+      notes: 'Showcase quick pass: Activity completed.'
+    });
+
+    if (currentActivityIndex + 1 < prescribedActivities.length) {
+      updateFlow({
+        step: 'activity-intro',
+        activityIndex: currentActivityIndex + 1
+      });
+    } else {
+      updateFlow({
+        step: 'reminders',
+        reminderIndex: 0
+      });
+    }
+  };
+
+  const handleSkipAllActivities = () => {
+    AudioSpeechService.playChime('tap');
+    const nowStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    prescribedActivities.forEach((act, idx) => {
+      StorageService.addSession({
+        id: `sess-${Date.now()}-${idx}`,
+        patientId: patient.id,
+        gameType: act.gameType,
+        gameTitle: getGameTitle(act.gameType),
+        score: 94,
+        accuracy: 96,
+        responseTime: 3.5,
+        attempts: 1,
+        difficulty: 2,
+        timestamp: new Date().toISOString(),
+        dateFormatted: nowStr,
+        completed: true,
+        synced: !StorageService.isOffline(),
+        notes: 'Showcase quick pass: Activity completed.'
+      });
+    });
+
+    updateFlow({
+      step: 'reminders',
+      reminderIndex: 0
+    });
+  };
+
   const handleCompleteCurrentReminder = () => {
     AudioSpeechService.playChime('success');
     if (activeReminder) {
@@ -638,6 +699,29 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
                   </button>
                 </div>
 
+                {/* Showcase Skip Controls */}
+                <div className="pt-4 flex items-center justify-center gap-6 border-t border-stone-100">
+                  <button
+                    type="button"
+                    onClick={handleSkipCurrentActivity}
+                    className="text-stone-500 hover:text-stone-800 text-xs font-semibold hover:underline hover:decoration-dashed hover:underline-offset-4 transition-all cursor-pointer bg-transparent border-0 p-0 inline-flex items-center gap-1.5"
+                  >
+                    <span>Skip current activity</span>
+                    <span>→</span>
+                  </button>
+
+                  <span className="text-stone-300 text-xs">•</span>
+
+                  <button
+                    type="button"
+                    onClick={handleSkipAllActivities}
+                    className="text-stone-500 hover:text-stone-800 text-xs font-semibold hover:underline hover:decoration-dashed hover:underline-offset-4 transition-all cursor-pointer bg-transparent border-0 p-0 inline-flex items-center gap-1.5"
+                  >
+                    <span>Skip all activities</span>
+                    <span>→</span>
+                  </button>
+                </div>
+
               </div>
             );
           })()}
@@ -718,6 +802,29 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
                     <ChevronRight className="w-5 h-5" />
                   </>
                 )}
+              </button>
+            </div>
+
+            {/* Showcase Skip Controls */}
+            <div className="pt-4 flex items-center justify-center gap-6 border-t border-stone-100">
+              <button
+                type="button"
+                onClick={handleNextFromPerformance}
+                className="text-stone-500 hover:text-stone-800 text-xs font-semibold hover:underline hover:decoration-dashed hover:underline-offset-4 transition-all cursor-pointer bg-transparent border-0 p-0 inline-flex items-center gap-1.5"
+              >
+                <span>Skip current activity</span>
+                <span>→</span>
+              </button>
+
+              <span className="text-stone-300 text-xs">•</span>
+
+              <button
+                type="button"
+                onClick={handleSkipAllActivities}
+                className="text-stone-500 hover:text-stone-800 text-xs font-semibold hover:underline hover:decoration-dashed hover:underline-offset-4 transition-all cursor-pointer bg-transparent border-0 p-0 inline-flex items-center gap-1.5"
+              >
+                <span>Skip all activities</span>
+                <span>→</span>
               </button>
             </div>
 

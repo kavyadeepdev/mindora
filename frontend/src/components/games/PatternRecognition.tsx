@@ -12,6 +12,8 @@ interface PatternRecognitionProps {
   language: Language;
   onFinishGame?: () => void;
   roundsCount?: number;
+  onSkipCurrent?: () => void;
+  onSkipAll?: () => void;
 }
 
 interface PatternOption {
@@ -170,7 +172,14 @@ interface RoundRecord {
   selectedOption: PatternOption;
 }
 
-export const PatternRecognition: React.FC<PatternRecognitionProps> = ({ onBack, language, onFinishGame, roundsCount = 5 }) => {
+export const PatternRecognition: React.FC<PatternRecognitionProps> = ({ 
+  onBack, 
+  language, 
+  onFinishGame, 
+  roundsCount = 3,
+  onSkipCurrent,
+  onSkipAll
+}) => {
   const TOTAL_ROUNDS = roundsCount;
   const difficulty = AdaptiveDifficultyEngine.getCurrentDifficulty('pattern');
 
@@ -275,7 +284,7 @@ export const PatternRecognition: React.FC<PatternRecognitionProps> = ({ onBack, 
       dateFormatted: nowStr,
       completed: true,
       synced: !StorageService.isOffline(),
-      notes: `Completed 5 sequence puzzles: ${correctCount}/${TOTAL_ROUNDS} correct (${exactAccuracy}% accuracy) in avg ${avgResponseTime}s.`
+      notes: `Completed ${TOTAL_ROUNDS} sequence puzzles: ${correctCount}/${TOTAL_ROUNDS} correct (${exactAccuracy}% accuracy) in avg ${avgResponseTime}s.`
     });
 
     setPhase('completed');
@@ -324,11 +333,6 @@ export const PatternRecognition: React.FC<PatternRecognitionProps> = ({ onBack, 
               })}
             </div>
           </div>
-
-          <span className="text-xs font-bold uppercase tracking-wider text-amber-900 bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-2xl flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-            Level {difficulty}
-          </span>
 
           <button
             onClick={() => {
@@ -450,7 +454,32 @@ export const PatternRecognition: React.FC<PatternRecognitionProps> = ({ onBack, 
         </div>
       )}
 
-      {/* Result Modal upon completing all 5 rounds */}
+      {/* Showcase Skip Controls */}
+      {phase !== 'completed' && (
+        <div className="mt-10 pt-6 border-t border-stone-200/60 flex items-center justify-center gap-6">
+          <button
+            type="button"
+            onClick={onSkipCurrent || onBack}
+            className="text-stone-500 hover:text-stone-800 text-xs font-semibold hover:underline hover:decoration-dashed hover:underline-offset-4 transition-all cursor-pointer bg-transparent border-0 p-0 inline-flex items-center gap-1.5"
+          >
+            <span>Skip current activity</span>
+            <span>→</span>
+          </button>
+
+          <span className="text-stone-300 text-xs">•</span>
+
+          <button
+            type="button"
+            onClick={onSkipAll || onBack}
+            className="text-stone-500 hover:text-stone-800 text-xs font-semibold hover:underline hover:decoration-dashed hover:underline-offset-4 transition-all cursor-pointer bg-transparent border-0 p-0 inline-flex items-center gap-1.5"
+          >
+            <span>Skip all activities</span>
+            <span>→</span>
+          </button>
+        </div>
+      )}
+
+      {/* Result Modal upon completing all rounds */}
       {phase === 'completed' && result && (
         <GameResultModal
           gameType="pattern"

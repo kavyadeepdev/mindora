@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Trophy, Clock, Target, ArrowRight, RotateCcw, ShieldAlert, Sparkles, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Trophy, Clock, Target, RotateCcw, Sparkles } from 'lucide-react';
 import { GameType } from '../../types';
 import { AdaptiveResult } from '../../services/adaptiveEngine';
 import { AudioSpeechService } from '../../services/audioSpeech';
@@ -88,37 +88,23 @@ export const GameResultModal: React.FC<GameResultModalProps> = ({
           </div>
         </div>
 
-        {/* REAL Adaptive Difficulty Result Card */}
-        <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 mb-5">
+        {/* Gentle Rounds Completed Card */}
+        <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 mb-5">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-              Adaptive Difficulty Engine
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+              Activity Rounds Completed
             </span>
-            <div className="flex items-center gap-1 text-xs font-bold">
-              {adaptiveResult.direction === 'increased' && (
-                <span className="flex items-center text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                  <TrendingUp className="w-3 h-3 mr-1" /> Level {adaptiveResult.previousDifficulty} → {adaptiveResult.newDifficulty}
-                </span>
-              )}
-              {adaptiveResult.direction === 'decreased' && (
-                <span className="flex items-center text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
-                  <TrendingDown className="w-3 h-3 mr-1" /> Level {adaptiveResult.previousDifficulty} → {adaptiveResult.newDifficulty}
-                </span>
-              )}
-              {adaptiveResult.direction === 'unchanged' && (
-                <span className="flex items-center text-stone-700 bg-stone-200 px-2 py-0.5 rounded-full">
-                  <Minus className="w-3 h-3 mr-1" /> Maintained Level {adaptiveResult.newDifficulty}
-                </span>
-              )}
-            </div>
+            <span className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-full">
+              Session Finished
+            </span>
           </div>
           <p className="text-xs text-stone-700 leading-relaxed font-medium">
-            <strong className="text-amber-950">Caregiver Note:</strong> {adaptiveResult.caregiverExplanation}
+            <strong className="text-emerald-950">Caregiver Note:</strong> {adaptiveResult.caregiverExplanation}
           </p>
           {isOffline && (
-            <div className="mt-2 pt-2 border-t border-amber-200/60 text-[11px] text-amber-900 flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <div className="mt-2 pt-2 border-t border-emerald-200/60 text-[11px] text-emerald-900 flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
               Saved in offline storage. Ready to reconcile when network returns.
             </div>
           )}
