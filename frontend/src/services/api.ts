@@ -195,17 +195,22 @@ export const apiClient = {
         body: JSON.stringify(params),
       }),
     getRecommendation: (params: {
+      patientId?: string;
       patientName?: string;
       age?: number;
       language?: string;
       interests?: string[];
       recentPerformance?: Record<string, unknown>;
       completedToday?: string[];
+      sessions?: any[];
     }) =>
       request<{
         recommendedActivity: string;
+        gameType?: GameType;
         culturalTheme: string;
         reasoning: string;
+        suggestedRounds?: number;
+        suggestedDifficulty?: number;
         encouragement: string;
         isAiGenerated: boolean;
         source: string;

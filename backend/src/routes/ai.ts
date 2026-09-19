@@ -64,6 +64,21 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
 
     const payload = parseResult.data;
 
+    // Fetch patient's recent sessions from DB if patientId is provided
+    let patientSessions: any[] = [];
+    if (payload.patientId) {
+      try {
+        patientSessions = await db
+          .select()
+          .from(gameSessions)
+          .where(eq(gameSessions.patientId, payload.patientId))
+          .orderBy(desc(gameSessions.playedAt))
+          .limit(20);
+      } catch (err) {
+        fastify.log.warn(`Could not load sessions for patient ${payload.patientId}: ${err}`);
+      }
+    }
+
     // 1. Attempt forwarding to FastAPI microservice if configured
     if (config.fastapiServiceUrl) {
       try {
@@ -73,7 +88,10 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
         const apiResponse = await fetch(`${config.fastapiServiceUrl}/api/v1/recommendation`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            ...payload,
+            sessions: patientSessions,
+          }),
           signal: controller.signal,
         });
         clearTimeout(timeout);
@@ -92,40 +110,98 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
       }
     }
 
-    // 2. Safe deterministic North-Eastern Region (NER) cultural fallback
-    const activities = [
-      {
+    // 2. Teammate's scoring heuristic fallback (evaluates recent session accuracy & interests)
+    const activities: Record<string, { name: string; gameType: string; culturalTheme: string; reason: string; defaultRounds: number }> = {
+      memory: {
+        gameType: "memory",
         name: "Memory Match",
         culturalTheme: "Tea Garden Flowers & Utensils",
         reason: "Gentle visual recall with familiar cultural artifacts.",
+        defaultRounds: 5,
       },
-      {
+      attention: {
+        gameType: "attention",
         name: "Attention Challenge",
         culturalTheme: "Bihu Rhythm & Weaving Motifs",
         reason: "Active focus stimulation through rhythmic patterns.",
+        defaultRounds: 5,
       },
-      {
+      pattern: {
+        gameType: "pattern",
         name: "Pattern Recognition",
         culturalTheme: "Muga Silk & Traditional Borders",
         reason: "Pattern continuity promotes logical sequence recall.",
+        defaultRounds: 5,
       },
-      {
+      routine: {
+        gameType: "routine",
         name: "Daily Routine Recall",
         culturalTheme: "Morning Tea & Garden Stroll",
         reason: "Grounding routine sequence reinforcement for calmness.",
+        defaultRounds: 3,
       },
-    ];
+    };
 
-    const selected =
-      activities.find((a) => !payload.completedToday.includes(a.name)) || activities[0];
+    const completedSet = new Set(payload.completedToday || []);
+    const scores: Record<string, number> = { memory: 0, attention: 0, pattern: 0, routine: 0 };
+
+    for (const [key, act] of Object.entries(activities)) {
+      // Bonus if not completed today
+      if (!completedSet.has(act.name) && !completedSet.has(act.gameType)) {
+        scores[key] += 2.0;
+      }
+
+      // Check recent accuracy from patient's sessions
+      const matching = patientSessions.filter(
+        (s: any) =>
+          (s.gameType && s.gameType.toLowerCase() === key) ||
+          (s.gameTitle && s.gameTitle.toLowerCase().includes(act.name.toLowerCase()))
+      );
+
+      if (matching.length > 0) {
+        const recent = matching.slice(0, 5);
+        const avgAcc = recent.reduce((sum: number, s: any) => sum + Number(s.accuracy || 75), 0) / recent.length;
+        if (avgAcc < 70) {
+          scores[key] += 3.5; // Needs gentle reinforcement
+        } else if (avgAcc < 85) {
+          scores[key] += 2.5;
+        } else {
+          scores[key] += 1.0;
+        }
+      }
+    }
+
+    // Cultural & personal interest matching
+    const interestStr = (payload.interests || []).join(" ").toLowerCase();
+    if (/music|garden|flower|tea|festival|nature/.test(interestStr)) scores.memory += 2.5;
+    if (/weaving|craft|pattern|silk|muga|loom/.test(interestStr)) scores.pattern += 2.5;
+    if (/routine|family|daily|morning|stroll|prayer/.test(interestStr)) scores.routine += 2.5;
+    if (/rhythm|bihu|instrument|dhol|pepa|focus/.test(interestStr)) scores.attention += 2.5;
+
+    // Pick highest scoring candidate
+    let bestKey = "memory";
+    let maxScore = -1;
+    for (const [k, score] of Object.entries(scores)) {
+      if (score > maxScore) {
+        maxScore = score;
+        bestKey = k;
+      }
+    }
+
+    const selected = activities[bestKey] || activities.memory;
+    const suggestedRounds = payload.age >= 80 ? Math.max(3, selected.defaultRounds - 2) : selected.defaultRounds;
 
     return reply.send({
       recommendedActivity: selected.name,
+      gameType: selected.gameType,
       culturalTheme: selected.culturalTheme,
-      reasoning: `Based on ${payload.patientName}'s interest in ${payload.interests[0] || "Gardening"}, ${selected.reason}`,
+      reasoning: `Curated for ${payload.patientName} based on recent cognitive accuracy, pacing, and interest in ${payload.interests[0] || "Gardening"}. ${selected.reason}`,
+      suggestedRounds,
+      suggestedDifficulty: 2,
       encouragement: `Subho prabhat ${payload.patientName}! Take your gentle time and enjoy your quiet morning activity.`,
       isAiGenerated: false,
-      source: "fallback-engine",
+      patientName: payload.patientName,
+      source: "fallback-scoring-engine",
       fastapiConnected: false,
     });
   });

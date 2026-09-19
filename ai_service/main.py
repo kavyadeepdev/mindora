@@ -18,10 +18,12 @@ try:
     from ai_service.analyzer import analyzer
     from ai_service.llm_summary import generate_nemotron_summary, GROQ_MODEL, GROQ_API_KEY
     from ai_service.train import train_models
+    from ai_service.recommender import recommend_activity
 except ImportError:
     from analyzer import analyzer
     from llm_summary import generate_nemotron_summary, GROQ_MODEL, GROQ_API_KEY
     from train import train_models
+    from recommender import recommend_activity
 
 
 app = FastAPI(
@@ -43,12 +45,14 @@ class PatientAnalysisRequest(BaseModel):
     sessions: List[Dict[str, Any]] = Field(default_factory=list)
 
 class RecommendationRequest(BaseModel):
+    patientId: Optional[str] = None
     patientName: Optional[str] = "Patient"
     age: Optional[int] = 72
     language: Optional[str] = "en"
     interests: Optional[List[str]] = Field(default_factory=list)
     recentPerformance: Optional[Dict[str, Any]] = Field(default_factory=dict)
     completedToday: Optional[List[str]] = Field(default_factory=list)
+    sessions: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
 
 @app.get("/health")
 def health():
@@ -79,30 +83,19 @@ def analyze_patient(req: PatientAnalysisRequest):
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 @app.post("/recommendation")
+@app.post("/api/v1/recommendation")
 def get_recommendation(req: RecommendationRequest):
     """
-    Suggests the optimal next cognitive activity based on patient interests and pacing.
+    Suggests the optimal next cognitive activity based on patient performance history,
+    recent accuracy, pacing, and cultural interests for clinician decision-making.
     """
-    completed = set(req.completedToday or [])
-    all_activities = [
-        {"type": "memory", "title": "Memory Match", "reason": "Familiar visual recall promotes comfort and reminiscence."},
-        {"type": "routine", "title": "Daily Routine Recall", "reason": "Reinforces chronological memory for hydration and daily steps."},
-        {"type": "attention", "title": "Attention Challenge", "reason": "Gentle visual filtering without time pressure."},
-        {"type": "pattern", "title": "Pattern Recognition", "reason": "Stimulates working memory rhythm with regional motifs."}
-    ]
-
-    # Pick first uncompleted activity, or cycle to memory
-    chosen = next((a for a in all_activities if a["type"] not in completed), all_activities[0])
-
-    return {
-        "recommendedActivity": chosen["title"],
-        "gameType": chosen["type"],
-        "culturalTheme": "Assam Brahmaputra Valley",
-        "reasoning": chosen["reason"],
-        "encouragement": f"A peaceful, calming activity specially chosen for {req.patientName}.",
-        "isAiGenerated": True,
-        "source": "fastapi-ai-service"
-    }
+    return recommend_activity(
+        completed_today=req.completedToday,
+        interests=req.interests,
+        sessions=req.sessions,
+        patient_name=req.patientName or "Patient",
+        age=req.age or 72,
+    )
 
 @app.post("/retrain")
 def retrain():

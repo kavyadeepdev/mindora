@@ -182,6 +182,102 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
     }
   };
 
+  // AI Activity Recommendation State & Clinician Decision
+  const [recommendation, setRecommendation] = useState<{
+    recommendedActivity: string;
+    gameType: GameType;
+    culturalTheme: string;
+    reasoning: string;
+    suggestedRounds: number;
+    suggestedDifficulty: number;
+    encouragement: string;
+    source?: string;
+    status: 'pending' | 'accepted' | 'declined';
+  } | null>(null);
+  const [isLoadingRec, setIsLoadingRec] = useState(false);
+
+  const fetchRecommendation = async (patientId: string) => {
+    setIsLoadingRec(true);
+    try {
+      const p = patients.find(pt => pt.id === patientId) || activePatient;
+      const patientSessions = StorageService.getSessions().filter(s => s.patientId === patientId);
+      const res = await apiClient.ai.getRecommendation({
+        patientId,
+        patientName: p.name,
+        age: p.age,
+        interests: p.interests,
+        sessions: patientSessions,
+      });
+      if (res.data) {
+        let gtype: GameType = (res.data.gameType as GameType) || 'memory';
+        if (!['memory', 'attention', 'pattern', 'routine'].includes(gtype)) {
+          const actName = (res.data.recommendedActivity || '').toLowerCase();
+          if (actName.includes('memory')) gtype = 'memory';
+          else if (actName.includes('attention')) gtype = 'attention';
+          else if (actName.includes('pattern')) gtype = 'pattern';
+          else if (actName.includes('routine')) gtype = 'routine';
+          else gtype = 'memory';
+        }
+
+        setRecommendation({
+          recommendedActivity: res.data.recommendedActivity,
+          gameType: gtype,
+          culturalTheme: res.data.culturalTheme,
+          reasoning: res.data.reasoning,
+          suggestedRounds: res.data.suggestedRounds || 5,
+          suggestedDifficulty: res.data.suggestedDifficulty || 2,
+          encouragement: res.data.encouragement,
+          source: res.data.source,
+          status: 'pending',
+        });
+      }
+    } catch (e) {
+      console.error('Failed to fetch activity recommendation:', e);
+    } finally {
+      setIsLoadingRec(false);
+    }
+  };
+
+  const handleAcceptRecommendation = () => {
+    if (!recommendation) return;
+    const targetType = recommendation.gameType;
+
+    const updatedActivities = plan.activities.map(a => {
+      if (a.gameType === targetType) {
+        return {
+          ...a,
+          enabled: true,
+          order: 1,
+          rounds: recommendation.suggestedRounds || 5,
+          doctorNotes: `Approved by Dr. ${doctor.name}: ${recommendation.reasoning}`,
+        };
+      }
+      return {
+        ...a,
+        order: Math.min(4, a.order >= 1 ? a.order + 1 : a.order),
+      };
+    });
+
+    const updatedPlan: PatientActivityPlan = {
+      ...plan,
+      prescribedByDoctorId: doctor.id,
+      doctorName: doctor.name,
+      lastUpdated: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+      clinicalGoal: `Prescribed: ${recommendation.recommendedActivity} (${recommendation.culturalTheme}) - ${recommendation.reasoning}`,
+      activities: updatedActivities,
+    };
+
+    setPlan(updatedPlan);
+    StorageService.saveActivityPlan(updatedPlan);
+    setRecommendation(prev => prev ? { ...prev, status: 'accepted' } : null);
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 3500);
+  };
+
+  const handleDeclineRecommendation = () => {
+    setRecommendation(prev => prev ? { ...prev, status: 'declined' } : null);
+  };
+
   // Reload data when active patient changes
   useEffect(() => {
     setPlan(StorageService.getActivityPlan(activePatient.id));
@@ -189,6 +285,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
     setPatientAccessibility(StorageService.getPatientAccessibility(activePatient.id));
     setPatientLanguage(activePatient.language);
     fetchAiAnalysis(activePatient.id);
+    fetchRecommendation(activePatient.id);
   }, [activePatient.id]);
 
   // Listen to pairing updates
@@ -644,6 +741,163 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
                     <span>Prescription saved successfully! Patient screen will automatically update its daily path.</span>
                   </div>
                 )}
+
+                {/* AI Cognitive Recommendation for Clinician Review */}
+                <div className="mt-6 rounded-3xl bg-linear-to-br from-stone-900 via-teal-950 to-stone-900 border border-teal-500/30 p-6 sm:p-7 text-white shadow-lg relative overflow-hidden">
+                  <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+                  
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-stone-800">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300 shadow-inner">
+                        <Sparkles className="w-5 h-5 text-teal-400 animate-pulse" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-extrabold text-base font-['Outfit'] text-white">
+                            AI Clinical Regimen Recommendation
+                          </h4>
+                          <span className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-teal-400/20 text-teal-300 border border-teal-400/30">
+                            Clinical Decision Support
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-400 mt-0.5">
+                          Synthesized from {activePatient.name}'s performance telemetry, accuracy history, and North Eastern cultural anchors.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {recommendation?.status === 'accepted' && (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          Accepted by Dr. {doctor.name}
+                        </span>
+                      )}
+                      {recommendation?.status === 'declined' && (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-stone-700/60 text-stone-300 border border-stone-600">
+                          <X className="w-4 h-4 text-stone-400" />
+                          Declined (Custom Regimen Kept)
+                        </span>
+                      )}
+                      {(!recommendation || recommendation.status === 'pending') && (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          <Clock className="w-4 h-4 text-amber-400" />
+                          Awaiting Clinician Decision
+                        </span>
+                      )}
+                      <button
+                        onClick={() => fetchRecommendation(activePatient.id)}
+                        disabled={isLoadingRec}
+                        title="Re-evaluate recommendation"
+                        className="p-2 rounded-xl bg-stone-800/80 hover:bg-stone-700 border border-stone-700 text-stone-300 transition cursor-pointer disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isLoadingRec ? 'animate-spin' : ''}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {recommendation ? (
+                    <div className="mt-5 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="md:col-span-2 p-4 rounded-2xl bg-stone-800/60 border border-stone-700/60">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-xs font-bold text-teal-400 uppercase tracking-wider">
+                              Recommended Exercise
+                            </span>
+                            <span className="text-[11px] font-semibold text-stone-400">• {recommendation.culturalTheme}</span>
+                          </div>
+                          <h5 className="text-lg font-black text-white font-['Outfit']">
+                            {recommendation.recommendedActivity}
+                          </h5>
+                          <p className="text-xs text-stone-300 mt-2 leading-relaxed">
+                            {recommendation.reasoning}
+                          </p>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-stone-800/60 border border-stone-700/60 flex flex-col justify-between">
+                          <div>
+                            <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-2">
+                              Suggested Parameters
+                            </span>
+                            <div className="space-y-2 text-xs">
+                              <div className="flex justify-between items-center text-stone-300">
+                                <span>Prescribed Order:</span>
+                                <span className="font-bold text-white bg-teal-900/60 px-2 py-0.5 rounded-lg border border-teal-600/30">Step #1 Priority</span>
+                              </div>
+                              <div className="flex justify-between items-center text-stone-300">
+                                <span>Rounds Count:</span>
+                                <span className="font-bold text-white">{recommendation.suggestedRounds} Rounds</span>
+                              </div>
+                              <div className="flex justify-between items-center text-stone-300">
+                                <span>Difficulty Tier:</span>
+                                <span className="font-bold text-white">Level {recommendation.suggestedDifficulty} (Calibrated)</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 pt-2 border-t border-stone-700/60 text-[11px] text-stone-400">
+                            Source: <span className="text-teal-300 font-medium">{recommendation.source || 'Historical Telemetry ML'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Doctor Action Decision Controls */}
+                      <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-stone-800/80">
+                        <p className="text-xs text-stone-400 italic">
+                          {recommendation.status === 'accepted' 
+                            ? '✓ This activity has been activated as Step 1 in the patient regimen below. The patient will see it on their screen.'
+                            : recommendation.status === 'declined'
+                            ? 'Recommendation dismissed. The clinician-defined custom regimen remains active.'
+                            : 'As the clinician, you have full authority to adopt or override this recommendation.'}
+                        </p>
+
+                        <div className="flex items-center gap-2.5">
+                          {recommendation.status !== 'accepted' && (
+                            <button
+                              id="accept-ai-recommendation-btn"
+                              onClick={handleAcceptRecommendation}
+                              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-stone-950 font-black text-xs shadow-md transition cursor-pointer active:scale-95"
+                            >
+                              <Check className="w-4 h-4 text-stone-950" />
+                              <span>Accept & Prescribe to Regimen</span>
+                            </button>
+                          )}
+
+                          {recommendation.status === 'pending' && (
+                            <button
+                              id="decline-ai-recommendation-btn"
+                              onClick={handleDeclineRecommendation}
+                              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white font-bold text-xs border border-stone-700 transition cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>Decline</span>
+                            </button>
+                          )}
+
+                          {recommendation.status !== 'pending' && (
+                            <button
+                              onClick={() => setRecommendation(prev => prev ? { ...prev, status: 'pending' } : null)}
+                              className="text-xs text-stone-400 hover:text-teal-300 font-semibold underline underline-offset-2 transition cursor-pointer"
+                            >
+                              Re-open Decision
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-6 text-center text-xs text-stone-400">
+                      {isLoadingRec ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <RefreshCw className="w-4 h-4 animate-spin text-teal-400" />
+                          Evaluating patient performance telemetry and cognitive metrics...
+                        </span>
+                      ) : (
+                        'No recommendation available. Click refresh to evaluate patient telemetry.'
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* Clinical Goal Directive */}
                 <div className="mt-6 p-4 rounded-2xl bg-teal-50/60 border border-teal-200/80">
@@ -1270,11 +1524,37 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
 
                   {/* Clinician Regimen Recommendations */}
                   <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80">
-                    <span className="text-xs font-bold text-amber-950 block mb-1.5 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-                      AI Regimen Suggestions for Clinician
-                    </span>
-                    <ul className="text-xs text-amber-900 space-y-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                        AI Regimen Suggestions for Clinician
+                      </span>
+                      {recommendation && (
+                        <button
+                          onClick={() => {
+                            if (recommendation.status !== 'accepted') {
+                              handleAcceptRecommendation();
+                            } else {
+                              setActiveTab('regimen');
+                            }
+                          }}
+                          className={`text-[10px] font-bold px-2.5 py-1 rounded-lg transition cursor-pointer shadow-xs ${
+                            recommendation.status === 'accepted'
+                              ? 'bg-emerald-700 text-white'
+                              : 'bg-teal-700 hover:bg-teal-800 text-white'
+                          }`}
+                        >
+                          {recommendation.status === 'accepted' ? '✓ Applied to Regimen' : `Prescribe ${recommendation.recommendedActivity}`}
+                        </button>
+                      )}
+                    </div>
+                    <ul className="text-xs text-amber-900 space-y-1.5">
+                      {recommendation && (
+                        <li className="p-2 rounded-lg bg-teal-50/80 border border-teal-200/60 flex items-start gap-1.5 leading-snug text-teal-950 font-medium">
+                          <span className="text-teal-700 font-bold">•</span>
+                          <span><strong>Recommended Activity:</strong> {recommendation.recommendedActivity} ({recommendation.culturalTheme}) — {recommendation.reasoning}</span>
+                        </li>
+                      )}
                       {(aiAnalysis?.ai_summary?.regimen_recommendations ?? [
                         `Maintain prescribed activities at Level ${aiAnalysis?.ml_analysis?.recommended_difficulty ?? 2} to prevent cognitive fatigue.`,
                         'Schedule primary memory sessions between 9:30 AM and 11:00 AM after morning walk.',
