@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from "fastify";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
+import Groq from "groq-sdk";
 import { config } from "../config.js";
 import { db } from "../db/index.js";
 import { patientProfiles, gameSessions } from "../db/schema/index.js";
@@ -485,7 +486,7 @@ Output JSON format:
     });
   });
 
-  // Voice Assistant Endpoint
+  // Voice Assistant Endpoint (Groq LLM with keyword fallback)
   fastify.post("/voice-assist", async (request, reply) => {
     const parseResult = voiceAssistSchema.safeParse(request.body);
     if (!parseResult.success) {
@@ -493,8 +494,47 @@ Output JSON format:
     }
 
     const payload = parseResult.data;
-    const q = (payload.query || "").toLowerCase();
 
+    // Attempt Groq LLM call
+    if (config.groqApiKey) {
+      try {
+        const groq = new Groq({ apiKey: config.groqApiKey });
+
+        const prompt = `You are MINDORA, a calm, gentle, respectful voice companion for elderly patient ${payload.patientName} in North Eastern India.
+The user asked: "${payload.query}"
+Known Reminders: ${JSON.stringify(payload.reminders || [])}
+Today's activities: ${JSON.stringify(payload.todayActivities || [])}
+
+Rules:
+- Speak in very simple, short, reassuring sentences (max 25 words).
+- Speak with warm respect (like a caring family assistant).
+- If asked about medicines, times, or routine, answer accurately from the data.
+- NEVER offer medical advice or diagnostic opinions.
+
+Return JSON:
+{
+  "answer": "Simple spoken response"
+}`;
+
+        const response = await groq.chat.completions.create({
+          model: "openai/gpt-oss-20b",
+          messages: [{ role: "user", content: prompt }],
+          response_format: { type: "json_object" },
+        });
+
+        const content = response.choices[0]?.message?.content || "{}";
+        const parsed = JSON.parse(content);
+        return reply.send({
+          answer: parsed.answer || "I am here to help you with your daily routine and activities.",
+          isAiGenerated: true,
+        });
+      } catch (err) {
+        fastify.log.warn(`Groq voice-assist call failed: ${err}. Falling back to keyword engine.`);
+      }
+    }
+
+    // Keyword-based fallback
+    const q = (payload.query || "").toLowerCase();
     let answer = `I am here with you, ${payload.patientName}.`;
     if (q.includes("medicine") || q.includes("pill") || q.includes("dawakhana") || q.includes("oukhod")) {
       answer = "Your medicine reminder is scheduled for 9:00 AM. A glass of lukewarm water is also kept ready.";
