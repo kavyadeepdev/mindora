@@ -293,27 +293,89 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
     const name = String(patientObj.name || "Patient");
     const age = Number(patientObj.age || 72);
 
+    const mlAnalysis = {
+      total_sessions: totalSessions,
+      overall_accuracy_avg: avgAcc,
+      average_response_time_sec: avgRt,
+      predicted_stability_score: +(avgAcc * 0.95 + 4).toFixed(1),
+      fatigue_risk_level: riskLevel,
+      fatigue_risk_score: riskLevel === "Low Risk (Stable)" ? 0.15 : 0.45,
+      recommended_difficulty: recDiff,
+      stability_trend: "stable",
+      feature_importances: {
+        responseTime: 0.38,
+        difficulty: 0.28,
+        age: 0.16,
+        game_type_idx: 0.11,
+        attempts: 0.07,
+      },
+      model_status: "rules_engine_fallback",
+    };
+
+    // If Groq API Key is configured, synthesize dynamic LLM clinical summary
+    if (config.groqApiKey) {
+      try {
+        const groqController = new AbortController();
+        const timeout = setTimeout(() => groqController.abort(), 6000);
+
+        const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${config.groqApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: config.groqModel,
+            messages: [
+              {
+                role: "system",
+                content: "You are a clinical decision-support AI for geriatric cognitive engagement in India's North Eastern Region. Output pure JSON without markdown code fences."
+              },
+              {
+                role: "user",
+                content: `Patient: ${name}, Age: ${age}. Accuracy: ${avgAcc}%, Latency: ${avgRt}s, Stability: ${riskLevel}.
+Output JSON format:
+{
+  "executive_summary": "1-2 sentence non-diagnostic summary",
+  "strengths": ["bullet 1", "bullet 2"],
+  "fatigue_and_strain_assessment": "assessment sentence",
+  "regimen_recommendations": ["rec 1", "rec 2"]
+}`
+              }
+            ],
+            temperature: 0.2,
+            response_format: { type: "json_object" }
+          }),
+          signal: groqController.signal,
+        });
+        clearTimeout(timeout);
+
+        if (groqResponse.ok) {
+          const groqData = (await groqResponse.json()) as any;
+          const rawText = groqData.choices?.[0]?.message?.content;
+          if (rawText) {
+            const parsed = JSON.parse(rawText);
+            return reply.send({
+              status: "success",
+              patientId: patientId || "unknown",
+              ml_analysis: mlAnalysis,
+              ai_summary: {
+                ...parsed,
+                model_used: config.groqModel,
+                source: "groq-cloud",
+              },
+            });
+          }
+        }
+      } catch (err) {
+        fastify.log.warn(`Groq LLM summary error: ${err}`);
+      }
+    }
+
     return reply.send({
       status: "success",
       patientId: patientId || "unknown",
-      ml_analysis: {
-        total_sessions: totalSessions,
-        overall_accuracy_avg: avgAcc,
-        average_response_time_sec: avgRt,
-        predicted_stability_score: +(avgAcc * 0.95 + 4).toFixed(1),
-        fatigue_risk_level: riskLevel,
-        fatigue_risk_score: riskLevel === "Low Risk (Stable)" ? 0.15 : 0.45,
-        recommended_difficulty: recDiff,
-        stability_trend: "stable",
-        feature_importances: {
-          responseTime: 0.38,
-          difficulty: 0.28,
-          age: 0.16,
-          game_type_idx: 0.11,
-          attempts: 0.07,
-        },
-        model_status: "rules_engine_fallback",
-      },
+      ml_analysis: mlAnalysis,
       ai_summary: {
         executive_summary: `${name} (${age}y) exhibits consistent engagement across activities with a predicted stability index of ${+(avgAcc * 0.95 + 4).toFixed(1)}/100 and overall accuracy of ${avgAcc}%.`,
         strengths: [
@@ -360,6 +422,54 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
         }
       } catch {
         fastify.log.warn(`FastAPI service unreachable at ${config.fastapiServiceUrl}. Using rules-based caregiver summary.`);
+      }
+    }
+
+    if (config.groqApiKey) {
+      try {
+        const groqController = new AbortController();
+        const timeout = setTimeout(() => groqController.abort(), 6000);
+
+        const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${config.groqApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: config.groqModel,
+            messages: [
+              {
+                role: "system",
+                content: "You are a calm, respectful healthcare assistant in North Eastern India providing a brief weekly cognitive engagement trend report. Never diagnose dementia or offer medical advice. Output pure JSON."
+              },
+              {
+                role: "user",
+                content: `Patient Name: ${payload.patientName}, Routine Adherence: ${payload.adherenceRate}.
+Output JSON format:
+{
+  "summary": "2-3 sentences non-clinical summary",
+  "observationBulletPoints": ["bullet 1", "bullet 2", "bullet 3"]
+}`
+              }
+            ],
+            temperature: 0.2,
+            response_format: { type: "json_object" }
+          }),
+          signal: groqController.signal,
+        });
+        clearTimeout(timeout);
+
+        if (groqResponse.ok) {
+          const groqData = (await groqResponse.json()) as any;
+          const rawText = groqData.choices?.[0]?.message?.content;
+          if (rawText) {
+            const parsed = JSON.parse(rawText);
+            return reply.send({ ...parsed, isAiGenerated: true });
+          }
+        }
+      } catch (err) {
+        fastify.log.warn(`Groq caregiver summary error: ${err}`);
       }
     }
 
