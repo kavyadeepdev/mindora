@@ -11,7 +11,9 @@ import {
   CaregiverProfile
 } from '../types';
 
-const BASE_URL = '/api';
+const BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL)
+  ? (import.meta.env.VITE_API_URL.endsWith('/') ? import.meta.env.VITE_API_URL.slice(0, -1) : import.meta.env.VITE_API_URL)
+  : '/api';
 
 interface ApiResponse<T> {
   data?: T;
