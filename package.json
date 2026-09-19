@@ -21,8 +21,8 @@
     "db:docker:up": "docker compose up -d",
     "db:docker:down": "docker compose down",
     "db:docker:logs": "docker compose logs -f db",
-    "db:push": "bun --filter @mindora/backend run db:push",
-    "db:seed": "bun --filter @mindora/backend run db:seed",
+    "db:push": "bun run --cwd backend db:push",
+    "db:seed": "bun run --cwd backend db:seed",
     "dev:ai": "uvicorn ai_service.main:app --host 0.0.0.0 --port 8000 --reload",
     "ai:train": "python3 ai_service/train.py"
   },

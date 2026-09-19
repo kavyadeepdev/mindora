@@ -28,7 +28,12 @@ import {
   Eye,
   Settings,
   UserCheck,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  Lock,
+  Building,
+  GraduationCap,
+  Heart
 } from 'lucide-react';
 import { 
   DoctorProfile, 
@@ -81,6 +86,71 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
   const [newTime, setNewTime] = useState('09:00 AM');
   const [newType, setNewType] = useState<'medicine' | 'hydration' | 'activity' | 'appointment'>('medicine');
   const [newNotes, setNewNotes] = useState('');
+
+  // Doctor & Cohort Segregation State
+  const allDoctors = StorageService.getAllDoctors();
+  const allCaregivers = StorageService.getAllCaregivers();
+  const assignedPatients = patients.filter(p => p.doctorId === doctor.id || (doctor.linkedPatientIds && doctor.linkedPatientIds.includes(p.id)));
+  const effectivePatients = assignedPatients.length > 0 ? assignedPatients : patients;
+
+  // Add Patient Modal State
+  const [showAddPatientModal, setShowAddPatientModal] = useState(false);
+  const [newPtName, setNewPtName] = useState('');
+  const [newPtAge, setNewPtAge] = useState(72);
+  const [newPtGender, setNewPtGender] = useState('Male');
+  const [newPtLocation, setNewPtLocation] = useState('Kolkata, West Bengal');
+  const [newPtLanguage, setNewPtLanguage] = useState<Language>('bn');
+  const [newPtTheme, setNewPtTheme] = useState('bengali-heritage');
+  const [newPtDiagnosis, setNewPtDiagnosis] = useState('Mild Cognitive Impairment (MCI)');
+  const [newPtStage, setNewPtStage] = useState('Early Stage');
+  const [newPtCaregiverId, setNewPtCaregiverId] = useState(allCaregivers[0]?.id || '');
+
+  const handleCreatePatient = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPtName.trim()) return;
+
+    const chosenCg = allCaregivers.find(c => c.id === newPtCaregiverId);
+    const newPatient: PatientProfile = {
+      id: `p-${Date.now()}`,
+      name: newPtName,
+      age: Number(newPtAge),
+      gender: newPtGender,
+      location: newPtLocation,
+      language: newPtLanguage,
+      culturalTheme: newPtTheme,
+      diagnosis: newPtDiagnosis,
+      stage: newPtStage,
+      doctorId: doctor.id,
+      doctorName: doctor.name,
+      caregiverId: newPtCaregiverId,
+      caregiverName: chosenCg?.name,
+      interests: ['Familiar music', 'Morning walks', 'Family memories'],
+      accessStatus: 'active',
+      dailyRoutine: {
+        morningWakeUp: '06:30 AM',
+        morningHydration: '07:00 AM',
+        morningMeds: '08:00 AM',
+        breakfast: '08:30 AM',
+        morningWalk: '09:30 AM',
+        eveningTea: '04:30 PM',
+        nightSleep: '09:30 PM',
+      },
+      accessibility: { largeText: true, highContrast: false, reduceMotion: false, audioFeedback: true }
+    };
+
+    StorageService.addNewPatient(newPatient);
+    onSelectPatient(newPatient.id);
+    setShowAddPatientModal(false);
+    setNewPtName('');
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 3000);
+  };
+
+  const handleCaregiverAssignment = (patientId: string, caregiverId: string) => {
+    StorageService.assignCaregiverToPatient(patientId, caregiverId);
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 3000);
+  };
 
   // AI Analysis & Nemotron Summary State
   const [aiAnalysis, setAiAnalysis] = useState<{
@@ -253,75 +323,139 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
            ========================================================================= */}
         <aside className="w-full lg:w-80 shrink-0 space-y-6">
           
-          {/* Doctor Info Card */}
-          <div className="bg-white border border-stone-200 rounded-3xl p-5 shadow-xs">
-            <div className="flex items-center gap-3.5 pb-4 border-b border-stone-100">
+          {/* Doctor Profile & Statutory Credential Card */}
+          <div className="bg-white border border-stone-200 rounded-3xl p-5 shadow-xs space-y-3">
+            <div className="flex items-center gap-3.5 pb-3 border-b border-stone-100">
               <div className="w-12 h-12 rounded-2xl bg-teal-600/10 border border-teal-600/20 flex items-center justify-center text-teal-800 text-xl font-bold shadow-xs shrink-0">
                 <Stethoscope className="w-6 h-6 text-teal-700" />
               </div>
-              <div className="min-w-0">
-                <h2 className="text-base font-extrabold text-stone-900 font-['Outfit'] truncate">
-                  {doctor.name}
-                </h2>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-extrabold text-stone-900 font-['Outfit'] truncate">
+                    {doctor.name}
+                  </h2>
+                </div>
                 <span className="inline-block text-[10px] font-bold text-teal-900 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full mt-0.5">
-                  Neurologist & Clinical Lead
+                  {doctor.specialty || 'Cognitive Neurology'}
                 </span>
               </div>
             </div>
-            <p className="text-xs text-stone-500 mt-3 leading-relaxed">
+
+            {/* Doctor Switcher for Testing / Clinical Cohort */}
+            {allDoctors.length > 1 && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-stone-400 block">
+                  Switch Active Physician:
+                </label>
+                <div className="relative">
+                  <select
+                    value={doctor.id}
+                    onChange={(e) => {
+                      StorageService.setActiveDoctorId(e.target.value);
+                      const targetDoc = allDoctors.find(d => d.id === e.target.value);
+                      if (targetDoc) {
+                        const targetPatients = patients.filter(p => p.doctorId === targetDoc.id);
+                        if (targetPatients.length > 0) onSelectPatient(targetPatients[0].id);
+                      }
+                    }}
+                    className="w-full appearance-none bg-stone-50 border border-stone-300 rounded-xl px-3 py-1.5 pr-8 text-xs font-bold text-stone-800 focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                  >
+                    {allDoctors.map(d => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({d.hospital.split(',')[0]})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-stone-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+            )}
+
+            {/* Statutory Medical Credentials Details */}
+            <div className="bg-stone-50/80 rounded-2xl p-3 border border-stone-200/70 text-[11px] space-y-1 text-stone-600">
+              <div className="flex items-center justify-between">
+                <span className="text-stone-500">License (NMC/SMC):</span>
+                <span className="font-mono font-bold text-teal-900">{doctor.medicalRegistrationNumber || 'WBMC-68492'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-stone-500">Authority:</span>
+                <span className="font-semibold text-stone-700 truncate max-w-[140px]" title={doctor.medicalCouncil}>
+                  {doctor.medicalCouncil || 'State Medical Council'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-stone-500">Qualification:</span>
+                <span className="font-bold text-stone-800 truncate max-w-[140px]">{doctor.qualification || 'MBBS, MD'}</span>
+              </div>
+              <div className="pt-1 flex items-center justify-between">
+                <span className="text-stone-500">Status:</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                  doctor.verificationStatus === 'approved' 
+                    ? 'bg-emerald-100 text-emerald-800' 
+                    : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {doctor.verificationStatus === 'approved' ? 'NMC Verified' : 'Pending Verification'}
+                </span>
+              </div>
+            </div>
+            
+            <p className="text-[11px] text-stone-500 leading-relaxed">
               {doctor.hospital}
             </p>
           </div>
 
-          {/* Patient Selector / Cohort Switcher */}
-          <div className="bg-white border border-stone-200 rounded-3xl p-5 shadow-xs">
-            <div className="flex items-center justify-between mb-3">
+          {/* Patient Selector Dropdown */}
+          <div className="bg-white border border-stone-200 rounded-3xl p-5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
               <span className="text-xs font-extrabold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-teal-600" />
-                Select Patient ({patients.length})
+                Select Patient ({effectivePatients.length})
               </span>
-              <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
-                Active Cohort
-              </span>
+              <button
+                onClick={() => setShowAddPatientModal(true)}
+                className="text-[11px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-2 py-1 rounded-lg border border-teal-200 transition cursor-pointer flex items-center gap-1"
+                title="Add new patient to your assigned cohort"
+              >
+                <Plus className="w-3 h-3" />
+                Add Patient
+              </button>
             </div>
 
-            <div className="space-y-2">
-              {patients.map((p) => {
-                const isSelected = p.id === activePatient.id;
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => onSelectPatient(p.id)}
-                    className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center gap-3 cursor-pointer ${
-                      isSelected
-                        ? 'bg-teal-50/80 border-teal-500 shadow-xs'
-                        : 'bg-stone-50 border-stone-200/80 hover:bg-stone-100 hover:border-stone-300'
-                    }`}
-                  >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
-                      isSelected 
-                        ? 'bg-teal-700 text-white shadow-xs' 
-                        : 'bg-stone-200 text-stone-700'
-                    }`}>
-                      {p.name.split(' ').map(n => n[0]).join('')}
-                    </div>
+            {/* Accessible Dropdown Selector */}
+            <div className="relative">
+              <select
+                id="patient-select-dropdown"
+                value={activePatient.id}
+                onChange={(e) => onSelectPatient(e.target.value)}
+                className="w-full appearance-none bg-stone-50 border-2 border-teal-500/40 rounded-2xl px-3.5 py-2.5 pr-10 text-xs font-bold text-stone-900 focus:outline-none focus:ring-4 focus:ring-teal-500/20 focus:border-teal-600 cursor-pointer shadow-xs"
+              >
+                {effectivePatients.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.age}y) — {p.language.toUpperCase()} • {p.stage || 'MCI'}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-teal-700 pointer-events-none" />
+            </div>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-extrabold text-xs text-stone-900 truncate">
-                          {p.name}
-                        </h4>
-                        {isSelected && (
-                          <span className="w-2 h-2 rounded-full bg-teal-600 shrink-0" />
-                        )}
-                      </div>
-                      <p className="text-[11px] text-stone-500 truncate mt-0.5">
-                        {p.age}y • {p.stage || 'Cognitive Care'}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
+            {/* Active Patient Summary Chip */}
+            <div className="p-3 bg-teal-50/60 border border-teal-200/80 rounded-2xl flex items-center gap-3">
+              <img 
+                src={activePatient.avatarUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"} 
+                alt={activePatient.name} 
+                className="w-10 h-10 rounded-xl object-cover border border-teal-300 shrink-0"
+              />
+              <div className="min-w-0 flex-1 text-[11px]">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-stone-900 truncate">{activePatient.name}</span>
+                  <span className="text-[10px] font-bold text-teal-800 bg-teal-100 px-1.5 py-0.5 rounded">
+                    {activePatient.language.toUpperCase()}
+                  </span>
+                </div>
+                <p className="text-stone-500 truncate mt-0.5">
+                  Caregiver: <strong>{activePatient.caregiverName || "Assigned"}</strong>
+                </p>
+              </div>
             </div>
           </div>
 
@@ -1089,7 +1223,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
                       </div>
                       <div>
                         <h4 className="font-extrabold text-sm text-stone-900">
-                          Executive Clinical Summary for Dr. Debojit Sarma
+                          Executive Clinical Summary for {doctor.name}
                         </h4>
                         <span className="text-[10px] text-stone-500">
                           Model: {aiAnalysis?.ai_summary?.model_used ?? 'nvidia/llama-3.1-nemotron-70b-instruct (Groq)'}
@@ -1214,51 +1348,92 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
           {activeTab === 'patients' && (
             <div className="space-y-6">
               <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs">
-                <div className="pb-6 border-b border-stone-200">
-                  <h3 className="text-xl font-extrabold text-stone-900 font-['Outfit'] flex items-center gap-2">
-                    <Users className="w-5 h-5 text-teal-700" />
-                    Patient Cohort Directory
-                  </h3>
-                  <p className="text-xs text-stone-500 mt-1">
-                    All dementia patients under Dr. Debojit Sarma's clinical care.
-                  </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-200">
+                  <div>
+                    <h3 className="text-xl font-extrabold text-stone-900 font-['Outfit'] flex items-center gap-2">
+                      <Users className="w-5 h-5 text-teal-700" />
+                      Patient Cohort Directory
+                    </h3>
+                    <p className="text-xs text-stone-500 mt-1">
+                      Dementia patients enrolled under {doctor.name}'s clinical care ({effectivePatients.length} active).
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowAddPatientModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition shadow-xs cursor-pointer self-start sm:self-auto"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Enrol New Patient
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                  {patients.map((p) => {
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-6">
+                  {effectivePatients.map((p) => {
                     const isSelected = p.id === activePatient.id;
+                    const assignedCg = allCaregivers.find(c => c.id === p.caregiverId);
+
                     return (
                       <div
                         key={p.id}
-                        className={`p-5 rounded-3xl border transition ${
+                        className={`p-5 rounded-3xl border transition flex flex-col justify-between ${
                           isSelected
                             ? 'bg-teal-50/70 border-teal-500 ring-2 ring-teal-500/20 shadow-xs'
                             : 'bg-stone-50 border-stone-200 hover:border-stone-300'
                         }`}
                       >
-                        <div className="w-12 h-12 rounded-2xl bg-teal-100 text-teal-900 flex items-center justify-center font-black text-sm mb-3">
-                          {p.name.split(' ').map(n => n[0]).join('')}
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-teal-100 text-teal-900 flex items-center justify-center font-black text-sm">
+                              {p.name.split(' ').map(n => n[0]).join('')}
+                            </div>
+                            <span className="text-[11px] font-bold text-teal-800 bg-teal-100/70 border border-teal-200 px-2.5 py-0.5 rounded-full uppercase">
+                              {p.language.toUpperCase()} • {p.stage || 'MCI'}
+                            </span>
+                          </div>
+
+                          <h4 className="font-extrabold text-stone-900 text-base">{p.name}</h4>
+                          <p className="text-xs text-stone-500 mt-1">
+                            {p.age} years • {p.gender} • {p.location}
+                          </p>
+                          <p className="text-xs text-stone-600 mt-1">
+                            Diagnosis: <strong className="text-stone-800">{p.diagnosis || "Early Cognitive Decline"}</strong>
+                          </p>
+
+                          {/* Assigned Caretaker Selector */}
+                          <div className="mt-3 pt-3 border-t border-stone-200/70">
+                            <label className="text-[11px] font-bold text-stone-700 block mb-1 flex items-center gap-1">
+                              <Heart className="w-3 h-3 text-rose-500" />
+                              Assigned Caretaker:
+                            </label>
+                            <select
+                              value={p.caregiverId || ''}
+                              onChange={(e) => handleCaregiverAssignment(p.id, e.target.value)}
+                              className="w-full bg-white border border-stone-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-stone-800 focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                            >
+                              <option value="" disabled>Select Caregiver</option>
+                              {allCaregivers.map(cg => (
+                                <option key={cg.id} value={cg.id}>
+                                  {cg.name} ({cg.relation || 'Caregiver'})
+                                </option>
+                              ))}
+                            </select>
+                            {assignedCg && (
+                              <span className="text-[10px] text-stone-500 block mt-0.5 truncate">
+                                Contact: {assignedCg.email || assignedCg.phone || 'Assigned'}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <h4 className="font-extrabold text-stone-900 text-base">{p.name}</h4>
-                        <span className="text-xs font-semibold text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full inline-block mt-1">
-                          {p.stage || 'MCI'}
-                        </span>
-                        <p className="text-xs text-stone-500 mt-2">
-                          {p.age} years • {p.gender} • {p.location}
-                        </p>
-                        <p className="text-xs text-stone-600 mt-1">
-                          Diagnosis: <strong>{p.diagnosis || "Early Cognitive Decline"}</strong>
-                        </p>
 
                         <button
                           onClick={() => onSelectPatient(p.id)}
-                          className={`w-full mt-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          className={`w-full mt-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                             isSelected
                               ? 'bg-teal-700 text-white'
                               : 'bg-white border border-stone-300 text-stone-700 hover:bg-stone-100'
                           }`}
                         >
-                          {isSelected ? 'Active Subject' : 'Select Patient'}
+                          {isSelected ? 'Active Subject Selected' : 'Set as Active Subject'}
                         </button>
                       </div>
                     );
@@ -1352,6 +1527,188 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({
                   className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-xs"
                 >
                   Save Reminder
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Enrol New Patient to Cohort */}
+      {showAddPatientModal && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-stone-200 p-6 max-w-lg w-full shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-stone-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-stone-900 font-['Outfit'] text-lg">
+                    Enrol Patient to {doctor.name}'s Cohort
+                  </h4>
+                  <p className="text-[11px] text-stone-500">
+                    Clinical registration and caretaker pairing
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddPatientModal(false)}
+                className="p-1 rounded-lg text-stone-400 hover:text-stone-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreatePatient} className="space-y-4 mt-4">
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Full Patient Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Manomohan Das"
+                  value={newPtName}
+                  onChange={(e) => setNewPtName(e.target.value)}
+                  className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-500 font-semibold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Age (Years)</label>
+                  <input
+                    type="number"
+                    min={45}
+                    max={105}
+                    required
+                    value={newPtAge}
+                    onChange={(e) => setNewPtAge(Number(e.target.value))}
+                    className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Gender</label>
+                  <select
+                    value={newPtGender}
+                    onChange={(e) => setNewPtGender(e.target.value)}
+                    className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-500 bg-white"
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Location / Residence</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Salt Lake, Kolkata, West Bengal"
+                  value={newPtLocation}
+                  onChange={(e) => setNewPtLocation(e.target.value)}
+                  className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Native Language</label>
+                  <select
+                    value={newPtLanguage}
+                    onChange={(e) => {
+                      const lang = e.target.value as Language;
+                      setNewPtLanguage(lang);
+                      if (lang === 'bn') setNewPtTheme('bengali-heritage');
+                      else if (lang === 'as') setNewPtTheme('assamese-heritage');
+                      else if (lang === 'kn') setNewPtTheme('kannada-heritage');
+                      else if (lang === 'hi') setNewPtTheme('hindi-heritage');
+                    }}
+                    className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-500 bg-white"
+                  >
+                    <option value="bn">Bengali (বাংলা)</option>
+                    <option value="as">Assamese (অসমীয়া)</option>
+                    <option value="kn">Kannada (ಕನ್ನಡ)</option>
+                    <option value="hi">Hindi (हिन्दी)</option>
+                    <option value="en">English</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Cultural Anchor Theme</label>
+                  <select
+                    value={newPtTheme}
+                    onChange={(e) => setNewPtTheme(e.target.value)}
+                    className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-500 bg-white"
+                  >
+                    <option value="bengali-heritage">Bengali Heritage</option>
+                    <option value="assamese-heritage">Assamese Heritage</option>
+                    <option value="kannada-heritage">Kannada Heritage</option>
+                    <option value="hindi-heritage">Hindi / North Indian Heritage</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Cognitive Stage</label>
+                  <select
+                    value={newPtStage}
+                    onChange={(e) => setNewPtStage(e.target.value)}
+                    className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-500 bg-white"
+                  >
+                    <option value="Mild Cognitive Impairment (MCI)">MCI</option>
+                    <option value="Early Stage">Early Stage Dementia</option>
+                    <option value="Moderate Stage">Moderate Stage</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-stone-700 block mb-1">Clinical Diagnosis</label>
+                  <input
+                    type="text"
+                    required
+                    value={newPtDiagnosis}
+                    onChange={(e) => setNewPtDiagnosis(e.target.value)}
+                    className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+              </div>
+
+              {/* Caregiver Selection */}
+              <div>
+                <label className="text-xs font-bold text-stone-700 block mb-1">Assign Caretaker</label>
+                <select
+                  value={newPtCaregiverId}
+                  onChange={(e) => setNewPtCaregiverId(e.target.value)}
+                  className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 focus:outline-none focus:border-teal-500 bg-white"
+                >
+                  {allCaregivers.map(cg => (
+                    <option key={cg.id} value={cg.id}>
+                      {cg.name} ({cg.relation || 'Caregiver'}) — {cg.email || cg.phone}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-stone-500 mt-1">
+                  The selected caretaker will receive portal access and real-time telemetry for this patient.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-stone-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAddPatientModal(false)}
+                  className="px-4 py-2 rounded-xl border border-stone-300 text-stone-600 text-xs font-bold hover:bg-stone-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-xs flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  Enrol Patient
                 </button>
               </div>
             </form>

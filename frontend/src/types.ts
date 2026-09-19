@@ -40,10 +40,14 @@ export interface PatientProfile {
     eveningTea: string;
     nightSleep: string;
   };
+  doctorId?: string;
+  doctorName?: string;
   caregiverId: string;
+  caregiverName?: string;
   culturalTheme: string;
   diagnosis?: string;
   stage?: string;
+  accessStatus?: 'active' | 'pending' | 'revoked';
   accessibility?: AccessibilitySettings;
 }
 
@@ -69,6 +73,8 @@ export interface CaregiverProfile {
   name: string;
   relation: string;
   phone: string;
+  email?: string;
+  status?: 'active' | 'revoked';
   linkedPatientIds: string[];
 }
 
@@ -137,7 +143,7 @@ export interface DemoStep {
   targetView: 'landing' | 'patient' | 'caregiver' | 'game-memory' | 'game-attention' | 'game-pattern' | 'game-routine';
 }
 
-export type SubdomainPortal = 'landing' | 'patient' | 'doctor' | 'caretaker';
+export type SubdomainPortal = 'landing' | 'patient' | 'doctor' | 'caretaker' | 'admin';
 
 export interface DoctorProfile {
   id: string;
@@ -146,7 +152,37 @@ export interface DoctorProfile {
   hospital: string;
   phone: string;
   email: string;
+  medicalRegistrationNumber?: string;
+  medicalCouncil?: string;
+  registrationYear?: number;
+  qualification?: string;
+  verificationStatus?: 'pending_approval' | 'approved' | 'rejected' | 'revoked';
+  rejectionReason?: string;
+  approvedAt?: string;
+  approvedBy?: string;
   linkedPatientIds: string[];
+}
+
+export interface AdminAuditLog {
+  id: string;
+  actionType: string;
+  actorEmail: string;
+  actorRole: string;
+  targetId: string;
+  targetName?: string;
+  details?: string;
+  timestamp: string;
+}
+
+export interface AdminOverviewStats {
+  totalDoctors: number;
+  approvedDoctors: number;
+  pendingDoctors: number;
+  totalPatients: number;
+  activePatients: number;
+  totalCaregivers: number;
+  totalDevicePairings: number;
+  pendingPairings: number;
 }
 
 export interface ActivityPrescriptionItem {

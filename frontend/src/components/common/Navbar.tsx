@@ -17,7 +17,8 @@ import {
   LogOut,
   LogIn,
   Stethoscope,
-  Smartphone
+  Smartphone,
+  ShieldAlert
 } from 'lucide-react';
 import { Language, AccessibilitySettings, PatientProfile, SubdomainPortal } from '../../types';
 import { getTranslation } from '../../utils/translations';
@@ -25,7 +26,7 @@ import { StorageService } from '../../services/storage';
 
 interface NavbarProps {
   portal: SubdomainPortal;
-  currentView: 'landing' | 'patient' | 'caregiver' | 'game' | 'doctor';
+  currentView: 'landing' | 'patient' | 'caregiver' | 'game' | 'doctor' | 'memories' | 'admin';
   onNavigate: (view: any) => void;
   language: Language;
   onLanguageChange: (lang: Language) => void;
@@ -82,6 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 if (portal === 'doctor') onNavigate('doctor');
                 else if (portal === 'caretaker') onNavigate('caregiver');
                 else if (portal === 'patient') onNavigate('patient');
+                else if (portal === 'admin') onNavigate('admin');
                 else onNavigate('landing');
               }}
               className="flex items-center gap-3 text-left focus:outline-none group"
@@ -89,6 +91,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="w-11 h-11 rounded-2xl bg-amber-600/10 border border-amber-600/25 flex items-center justify-center text-amber-800 shadow-xs group-hover:bg-amber-600/15 transition">
                 {portal === 'doctor' ? (
                   <Stethoscope className="w-6 h-6 text-teal-700" />
+                ) : portal === 'admin' ? (
+                  <ShieldAlert className="w-6 h-6 text-purple-700" />
                 ) : (
                   <HeartHandshake className="w-6 h-6 text-amber-700" />
                 )}
@@ -101,10 +105,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span className={`hidden md:inline-flex text-[11px] font-semibold tracking-wide border px-2.5 py-0.5 rounded-full ${
                     portal === 'doctor'
                       ? 'bg-teal-50 text-teal-900 border-teal-200'
+                      : portal === 'admin'
+                      ? 'bg-purple-50 text-purple-900 border-purple-200'
                       : 'bg-amber-100/80 text-amber-900 border-amber-200'
                   }`}>
                     {portal === 'doctor' ? 'Clinician' :
                      portal === 'caretaker' ? 'Caretaker' :
+                     portal === 'admin' ? 'Super Admin' :
                      getTranslation('careCompanion', language)}
                   </span>
                 </div>
@@ -132,7 +139,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Stethoscope className="w-4 h-4 text-teal-700" />
                 <span className="text-xs font-extrabold text-teal-950">Clinical Control Portal</span>
                 <span className="text-[10px] font-semibold text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded-full">
-                  Dr. Debojit Sarma
+                  {currentUser?.role === 'doctor' ? currentUser.name : 'Clinician'}
+                </span>
+              </div>
+            )}
+
+            {portal === 'admin' && (
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-200">
+                <ShieldAlert className="w-4 h-4 text-purple-700" />
+                <span className="text-xs font-extrabold text-purple-950">Super Admin Governance</span>
+                <span className="text-[10px] font-semibold text-purple-700 bg-purple-100/70 px-2 py-0.5 rounded-full">
+                  Statutory Oversight
                 </span>
               </div>
             )}
@@ -350,6 +367,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <p className="font-extrabold text-stone-900 text-sm mt-0.5 truncate">{currentUser.name}</p>
                         <p className="text-[11px] text-stone-500 truncate">{currentUser.email}</p>
                       </div>
+
+                      {currentUser.role === 'admin' && (
+                        <button
+                          onClick={() => {
+                            if (onSwitchPortal) onSwitchPortal('admin');
+                            else onNavigate('admin');
+                            setShowUserMenu(false);
+                          }}
+                          className="w-full text-left p-2 hover:bg-purple-50 text-purple-950 rounded-xl font-bold flex items-center gap-2 transition"
+                        >
+                          <ShieldAlert className="w-4 h-4 text-purple-700" />
+                          <span>Admin Governance</span>
+                        </button>
+                      )}
 
                       <button
                         onClick={() => {

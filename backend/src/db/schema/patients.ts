@@ -25,8 +25,11 @@ export const patientProfiles = pgTable(
   "patient_profiles",
   {
     id: text("id").primaryKey(),
+    doctorId: text("doctor_id"),
+    doctorName: text("doctor_name"),
     caregiverUserId: text("caregiver_user_id").references(() => user.id, { onDelete: "set null" }),
     caregiverId: text("caregiver_id"),
+    caregiverName: text("caregiver_name"),
     name: text("name").notNull(),
     age: integer("age").notNull(),
     gender: text("gender"),
@@ -38,12 +41,15 @@ export const patientProfiles = pgTable(
     culturalTheme: text("cultural_theme").notNull().default("tea-gardens"),
     diagnosis: text("diagnosis"),
     stage: text("stage"),
+    accessStatus: text("access_status").notNull().default("active"), // 'active' | 'pending' | 'revoked'
     accessibility: jsonb("accessibility").$type<Record<string, unknown>>().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
+    index("patient_profiles_doctor_idx").on(table.doctorId),
     index("patient_profiles_caregiver_idx").on(table.caregiverUserId),
+    index("patient_profiles_access_idx").on(table.accessStatus),
   ]
 );
 
@@ -53,8 +59,10 @@ export const caregiverProfiles = pgTable(
     id: text("id").primaryKey(),
     userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    email: text("email"),
     relation: text("relation"),
     phone: text("phone"),
+    status: text("status").notNull().default("active"), // 'active' | 'revoked'
     linkedPatientIds: jsonb("linked_patient_ids").$type<string[]>().default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -73,11 +81,37 @@ export const doctorProfiles = pgTable(
     hospital: text("hospital"),
     phone: text("phone"),
     email: text("email"),
+    medicalRegistrationNumber: text("medical_registration_number"), // Mandated statutory NMC/State Medical Council Reg No
+    medicalCouncil: text("medical_council"), // e.g. "West Bengal Medical Council / NMC", "Karnataka Medical Council / NMC"
+    registrationYear: integer("registration_year"),
+    qualification: text("qualification"), // e.g. "MBBS, MD (Geriatrics)"
+    verificationStatus: text("verification_status").notNull().default("pending_approval"), // 'pending_approval' | 'approved' | 'rejected' | 'revoked'
+    rejectionReason: text("rejection_reason"),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    approvedBy: text("approved_by"),
     linkedPatientIds: jsonb("linked_patient_ids").$type<string[]>().default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("doctor_profiles_user_idx").on(table.userId),
+    index("doctor_profiles_verification_idx").on(table.verificationStatus),
+  ]
+);
+
+export const adminAuditLogs = pgTable(
+  "admin_audit_logs",
+  {
+    id: text("id").primaryKey(),
+    actionType: text("action_type").notNull(), // 'doctor_approval' | 'doctor_rejection' | 'access_revocation' | 'caregiver_assigned' | 'patient_added' | 'patient_signin_approved'
+    actorEmail: text("actor_email").notNull(),
+    actorRole: text("actor_role").notNull(),
+    targetId: text("target_id").notNull(),
+    targetName: text("target_name"),
+    details: text("details"),
+    timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("admin_audit_logs_action_idx").on(table.actionType),
   ]
 );
 

@@ -37,6 +37,7 @@ import {
   Volume2,
   Eye,
   ChevronRight,
+  ChevronDown,
   Users,
   Save
 } from 'lucide-react';
@@ -92,6 +93,13 @@ export const CaregiverDashboard: React.FC<CaregiverDashboardProps> = ({
   const [pendingPairRequests, setPendingPairRequests] = useState(() => StorageService.getPairingRequests());
   const [linkedDevices, setLinkedDevices] = useState(() => StorageService.getLinkedDevices());
   const doctorPlan = StorageService.getActivityPlan(patient.id);
+
+  // Multi-caregiver & Patient Cohort Segregation
+  const allCaregivers = StorageService.getAllCaregivers();
+  const assignedPatients = patients.filter(
+    p => p.caregiverId === caregiver.id || (caregiver.linkedPatientIds && caregiver.linkedPatientIds.includes(p.id))
+  );
+  const effectivePatients = assignedPatients.length > 0 ? assignedPatients : patients;
 
   // Per-Patient Accessibility State
   const [patientAccessibility, setPatientAccessibility] = useState<AccessibilitySettings>(() => 
@@ -217,60 +225,86 @@ export const CaregiverDashboard: React.FC<CaregiverDashboardProps> = ({
               </div>
             </div>
             <p className="text-xs text-stone-500 mt-3 leading-relaxed">
-              Contact: {caregiver.phone}
+              Contact: {caregiver.phone || caregiver.email}
             </p>
+
+            {/* Caretaker Persona Switcher (If multiple caretakers exist) */}
+            {allCaregivers.length > 1 && (
+              <div className="mt-3 pt-3 border-t border-stone-100">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-1">
+                  Active Caretaker Persona
+                </label>
+                <div className="relative">
+                  <select
+                    value={caregiver.id}
+                    onChange={(e) => {
+                      StorageService.setActiveCaregiverId(e.target.value);
+                      const targetCg = allCaregivers.find(c => c.id === e.target.value);
+                      if (targetCg && onSelectPatient) {
+                        const targetPatients = patients.filter(
+                          p => p.caregiverId === targetCg.id || (targetCg.linkedPatientIds && targetCg.linkedPatientIds.includes(p.id))
+                        );
+                        if (targetPatients.length > 0) onSelectPatient(targetPatients[0].id);
+                      }
+                    }}
+                    className="w-full appearance-none bg-stone-50 border border-stone-300 rounded-xl px-3 py-1.5 pr-8 text-xs font-bold text-stone-800 focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                  >
+                    {allCaregivers.map(cg => (
+                      <option key={cg.id} value={cg.id}>
+                        {cg.name} ({cg.relation || 'Caregiver'})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-stone-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Patient Selector / Cohort Switcher */}
-          {patients.length > 0 && onSelectPatient && (
-            <div className="bg-white border border-stone-200 rounded-3xl p-5 shadow-xs">
-              <div className="flex items-center justify-between mb-3">
+          {/* Patient Selector / Cohort Dropdown */}
+          {effectivePatients.length > 0 && onSelectPatient && (
+            <div className="bg-white border border-stone-200 rounded-3xl p-5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-amber-600" />
-                  Select Patient ({patients.length})
+                  Assigned Patient ({effectivePatients.length})
                 </span>
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
-                  Active Patient
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                  Care Ward
                 </span>
               </div>
 
-              <div className="space-y-2">
-                {patients.map((p) => {
-                  const isSelected = p.id === patient.id;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => onSelectPatient(p.id)}
-                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center gap-3 cursor-pointer ${
-                        isSelected
-                          ? 'bg-amber-50/80 border-amber-500 shadow-xs'
-                          : 'bg-stone-50 border-stone-200/80 hover:bg-stone-100 hover:border-stone-300'
-                      }`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
-                        isSelected 
-                          ? 'bg-amber-600 text-white shadow-xs' 
-                          : 'bg-stone-200 text-stone-700'
-                      }`}>
-                        {p.name.split(' ').map(n => n[0]).join('')}
-                      </div>
+              {/* Clean Accessible Dropdown Selector */}
+              <div className="relative">
+                <select
+                  id="caregiver-patient-select-dropdown"
+                  value={patient.id}
+                  onChange={(e) => onSelectPatient(e.target.value)}
+                  className="w-full appearance-none bg-stone-50 border-2 border-amber-500/40 rounded-2xl px-3.5 py-2.5 pr-10 text-xs font-bold text-stone-900 focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-600 cursor-pointer shadow-xs"
+                >
+                  {effectivePatients.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.age}y • {p.language.toUpperCase()} • {p.stage || 'MCI'})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-amber-600 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-extrabold text-xs text-stone-900 truncate">
-                            {p.name}
-                          </h4>
-                          {isSelected && (
-                            <span className="w-2 h-2 rounded-full bg-amber-600 shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-[11px] text-stone-500 truncate mt-0.5">
-                          {p.age}y • {p.stage || 'Cognitive Care'}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
+              {/* Active Subject Micro Summary */}
+              <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-200/70 text-xs space-y-1 text-amber-950">
+                <div className="flex items-center justify-between font-bold">
+                  <span>{patient.name}</span>
+                  <span className="text-[10px] uppercase font-black tracking-wider text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-full">
+                    {patient.language.toUpperCase()} • {patient.stage || 'MCI'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-800/90 leading-tight">
+                  {patient.age} yrs • {patient.gender} • {patient.location}
+                </p>
+                <p className="text-[11px] text-amber-900 font-medium truncate">
+                  Physician: {patient.doctorName || 'Dr. Ananya Mukherjee'}
+                </p>
               </div>
             </div>
           )}

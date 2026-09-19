@@ -8,6 +8,7 @@ import { FamiliarMemories } from './components/patient/FamiliarMemories';
 import { VoiceAssistantModal } from './components/patient/VoiceAssistantModal';
 import { CaregiverDashboard } from './components/caregiver/CaregiverDashboard';
 import { DoctorDashboard } from './components/doctor/DoctorDashboard';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 import { PatientDevicePairing } from './components/patient/PatientDevicePairing';
 import { MemoryMatchGame } from './components/games/MemoryMatchGame';
 import { AttentionChallenge } from './components/games/AttentionChallenge';
@@ -20,7 +21,7 @@ import {
   GameType, 
   Reminder, 
   PatientProfile, 
-  CaregiverProfile,
+  CaregiverProfile, 
   DoctorProfile,
   GameSession, 
   AlertItem,
@@ -31,16 +32,17 @@ import { AudioSpeechService } from './services/audioSpeech';
 import { AuthModal } from './components/common/AuthModal';
 import { authService } from './services/auth';
 import { detectPortalFromUrl, navigateToPortal } from './utils/subdomain';
-import { Globe, Stethoscope, ShieldCheck, Heart, ExternalLink } from 'lucide-react';
+import { Globe, Stethoscope, ShieldCheck, Heart, ExternalLink, ShieldAlert } from 'lucide-react';
 
 export default function App() {
   // Subdomain & Portal State
   const [portal, setPortal] = useState<SubdomainPortal>(() => detectPortalFromUrl());
-  const [currentView, setCurrentView] = useState<'landing' | 'patient' | 'caregiver' | 'doctor' | 'game' | 'memories'>(() => {
+  const [currentView, setCurrentView] = useState<'landing' | 'patient' | 'caregiver' | 'doctor' | 'game' | 'memories' | 'admin'>(() => {
     const p = detectPortalFromUrl();
     if (p === 'doctor') return 'doctor';
     if (p === 'caretaker') return 'caregiver';
     if (p === 'patient') return 'patient';
+    if (p === 'admin') return 'admin';
     return 'landing';
   });
 
@@ -53,8 +55,8 @@ export default function App() {
 
   // Authentication State
   const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role?: string } | null>({
-    name: 'Dr. Debojit Sarma',
-    email: 'dr.debojit@mindora.care',
+    name: 'Dr. Ananya Mukherjee',
+    email: 'dr.ananya@mindora.health',
     role: 'doctor'
   });
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -98,6 +100,7 @@ export default function App() {
       if (detected === 'doctor') setCurrentView('doctor');
       else if (detected === 'caretaker') setCurrentView('caregiver');
       else if (detected === 'patient') setCurrentView('patient');
+      else if (detected === 'admin') setCurrentView('admin');
       else setCurrentView('landing');
     };
 
@@ -176,6 +179,8 @@ export default function App() {
       setCurrentView('caregiver');
     } else if (target === 'patient') {
       setCurrentView('patient');
+    } else if (target === 'admin') {
+      setCurrentView('admin');
     } else {
       setCurrentView('landing');
     }
@@ -217,9 +222,16 @@ export default function App() {
     setShowAuthModal(true);
   };
 
-  const handleLoginSuccess = (user: { name: string; email: string }) => {
+  const handleLoginSuccess = (user: { name: string; email: string; role?: string }) => {
     setCurrentUser(user);
     setShowAuthModal(false);
+    if (user.role === 'admin') {
+      handleSwitchPortal('admin');
+    } else if (user.role === 'doctor') {
+      handleSwitchPortal('doctor');
+    } else if (user.role === 'caregiver') {
+      handleSwitchPortal('caretaker');
+    }
     refreshStorageData();
   };
 
@@ -348,6 +360,7 @@ export default function App() {
           if (v === 'doctor') handleSwitchPortal('doctor');
           else if (v === 'caregiver') handleSwitchPortal('caretaker');
           else if (v === 'patient') handleSwitchPortal('patient');
+          else if (v === 'admin') handleSwitchPortal('admin');
           else handleSwitchPortal('landing');
         }}
         language={language}
@@ -396,6 +409,11 @@ export default function App() {
             }}
             language={language}
           />
+        )}
+
+        {/* SUPER ADMIN GOVERNANCE PORTAL */}
+        {currentView === 'admin' && (
+          <AdminDashboard />
         )}
 
         {/* CARETAKER / CAREGIVER PORTAL */}
@@ -592,6 +610,19 @@ export default function App() {
           <Heart className="w-3 h-3" />
           Patient
         </button>
+
+        <button
+          onClick={() => handleSwitchPortal('admin')}
+          className={`px-2.5 py-1 rounded-xl transition font-semibold flex items-center gap-1 ${
+            portal === 'admin' 
+              ? 'bg-purple-600 text-white shadow-xs' 
+              : 'hover:bg-stone-800 text-purple-300'
+          }`}
+          title="admin.mindora.app"
+        >
+          <ShieldAlert className="w-3 h-3" />
+          Admin
+        </button>
       </aside>
 
       {/* Reassuring Footer */}
@@ -605,6 +636,7 @@ export default function App() {
             <span>doctor.mindora.app</span>
             <span>caretaker.mindora.app</span>
             <span>patient.mindora.app</span>
+            <span>admin.mindora.app</span>
           </div>
         </div>
       </footer>

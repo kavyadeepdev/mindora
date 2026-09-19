@@ -15,6 +15,7 @@ import { contentRoutes } from "./routes/content.js";
 import { doctorsRoutes } from "./routes/doctors.js";
 import { activityPlansRoutes } from "./routes/activityPlans.js";
 import { pairingsRoutes } from "./routes/pairings.js";
+import { adminRoutes } from "./routes/admin.js";
 
 export async function buildServer() {
   const fastify = Fastify({
@@ -90,6 +91,7 @@ export async function buildServer() {
   await fastify.register(doctorsRoutes, { prefix: "/api/doctors" });
   await fastify.register(activityPlansRoutes, { prefix: "/api/activity-plans" });
   await fastify.register(pairingsRoutes, { prefix: "/api/pairings" });
+  await fastify.register(adminRoutes, { prefix: "/api/admin" });
 
   return fastify;
 }

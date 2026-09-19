@@ -7,14 +7,14 @@
     "game_type_idx"
   ],
   "feature_importances": {
-    "difficulty": 0.0057,
-    "responseTime": 0.7927,
-    "attempts": 0.1743,
-    "age": 0.0153,
-    "game_type_idx": 0.012
+    "difficulty": 0.0156,
+    "responseTime": 0.8158,
+    "attempts": 0.0643,
+    "age": 0.0711,
+    "game_type_idx": 0.0333
   },
-  "total_sessions_trained": 44,
-  "rmse": 0.75,
+  "total_sessions_trained": 18,
+  "rmse": 0.72,
   "risk_accuracy": 1.0,
   "classes": {
     "risk": [

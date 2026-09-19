@@ -7,7 +7,8 @@ import {
   DoctorProfile,
   PatientActivityPlan,
   DevicePairingRequest,
-  CulturalMemoryItem
+  CulturalMemoryItem,
+  CaregiverProfile
 } from '../types';
 
 const BASE_URL = '/api';
@@ -94,7 +95,13 @@ export const apiClient = {
 
   // Patients
   patients: {
-    getAll: () => request<{ items: PatientProfile[]; count: number }>('/patients'),
+    getAll: (params?: { doctorId?: string; caregiverId?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.doctorId) q.append('doctorId', params.doctorId);
+      if (params?.caregiverId) q.append('caregiverId', params.caregiverId);
+      const queryStr = q.toString();
+      return request<{ items: PatientProfile[]; count: number }>(`/patients${queryStr ? `?${queryStr}` : ''}`);
+    },
     getById: (id: string) => request<PatientProfile>(`/patients/${id}`),
     create: (patient: Partial<PatientProfile>) =>
       request<PatientProfile>('/patients', {
@@ -105,6 +112,16 @@ export const apiClient = {
       request<PatientProfile>(`/patients/${id}`, {
         method: 'PUT',
         body: JSON.stringify(updates),
+      }),
+    assignCaregiver: (id: string, caregiverId: string) =>
+      request<{ success: boolean; patient: PatientProfile; caregiver: CaregiverProfile }>(`/patients/${id}/assign-caregiver`, {
+        method: 'PUT',
+        body: JSON.stringify({ caregiverId }),
+      }),
+    updateStatus: (id: string, accessStatus: 'active' | 'pending' | 'revoked') =>
+      request<PatientProfile>(`/patients/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ accessStatus }),
       }),
   },
 
@@ -224,6 +241,28 @@ export const apiClient = {
   doctors: {
     getAll: () => request<{ items: DoctorProfile[]; count: number }>('/doctors'),
     getById: (id: string) => request<DoctorProfile>(`/doctors/${id}`),
+    getPatients: (doctorId: string) => request<{ items: PatientProfile[]; count: number }>(`/doctors/${doctorId}/patients`),
+    register: (data: {
+      name: string;
+      email: string;
+      password: string;
+      phone: string;
+      hospital: string;
+      specialty?: string;
+      medicalRegistrationNumber: string;
+      medicalCouncil: string;
+      registrationYear: number;
+      qualification: string;
+    }) =>
+      request<{ status: string; message: string; doctor: DoctorProfile }>('/doctors/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    addPatient: (doctorId: string, patientData: Partial<PatientProfile>) =>
+      request<PatientProfile>(`/doctors/${doctorId}/patients`, {
+        method: 'POST',
+        body: JSON.stringify(patientData),
+      }),
   },
 
   // Activity Plans
@@ -254,6 +293,62 @@ export const apiClient = {
     reject: (id: string) =>
       request<DevicePairingRequest>(`/pairings/${id}/reject`, {
         method: 'PATCH',
+      }),
+  },
+
+  // Super Admin API
+  admin: {
+    getOverview: () =>
+      request<{
+        stats: {
+          totalDoctors: number;
+          approvedDoctors: number;
+          pendingDoctors: number;
+          totalPatients: number;
+          activePatients: number;
+          totalCaregivers: number;
+          totalDevicePairings: number;
+          pendingPairings: number;
+        };
+        recentLogs: any[];
+      }>('/admin/overview'),
+    getDoctors: () =>
+      request<{ items: DoctorProfile[]; count: number }>('/admin/doctors'),
+    verifyDoctor: (id: string, action: 'approve' | 'reject' | 'revoke' | 'approved' | 'rejected' | 'revoked', reason?: string) =>
+      request<{ success: boolean; doctor: DoctorProfile }>(`/admin/doctors/${id}/verify`, {
+        method: 'POST',
+        body: JSON.stringify({ action, reason }),
+      }),
+    getPatients: () =>
+      request<{ items: PatientProfile[]; count: number }>('/admin/patients'),
+    updatePatientStatus: (id: string, accessStatus: 'active' | 'revoked' | 'pending') =>
+      request<PatientProfile>(`/admin/patients/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ accessStatus }),
+      }),
+    assignPatient: (id: string, assignment: { doctorId?: string; caregiverId?: string }) =>
+      request<PatientProfile>(`/admin/patients/${id}/assign`, {
+        method: 'PUT',
+        body: JSON.stringify(assignment),
+      }),
+    getCaregivers: () =>
+      request<{ items: CaregiverProfile[]; count: number }>('/admin/caregivers'),
+    updateCaregiverStatus: (id: string, status: 'active' | 'revoked') =>
+      request<CaregiverProfile>(`/admin/caregivers/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+      }),
+    getAuditLogs: () =>
+      request<{ items: any[]; count: number }>('/admin/audit-logs'),
+    getPairings: () =>
+      request<{ items: DevicePairingRequest[]; count: number }>('/admin/pairings'),
+    approvePairing: (id: string) =>
+      request<DevicePairingRequest>(`/admin/pairings/${id}/approve`, {
+        method: 'PUT',
+      }),
+    revokePairing: (id: string) =>
+      request<DevicePairingRequest>(`/admin/pairings/${id}/revoke`, {
+        method: 'PUT',
       }),
   },
 };

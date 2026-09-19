@@ -17,6 +17,9 @@ export function detectPortalFromUrl(): SubdomainPortal {
   if (hostname.startsWith('caretaker.') || hostname.startsWith('caregiver.')) {
     return 'caretaker';
   }
+  if (hostname.startsWith('admin.')) {
+    return 'admin';
+  }
 
   // 2. Check Pathname fallback (ideal for localhost:3000/patient, preview environments)
   if (pathname.startsWith('/patient')) {
@@ -27,6 +30,9 @@ export function detectPortalFromUrl(): SubdomainPortal {
   }
   if (pathname.startsWith('/caretaker') || pathname.startsWith('/caregiver')) {
     return 'caretaker';
+  }
+  if (pathname.startsWith('/admin')) {
+    return 'admin';
   }
 
   // 3. Default to separate Landing Page

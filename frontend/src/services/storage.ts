@@ -14,7 +14,9 @@ import {
   INITIAL_PATIENT, 
   MOCK_PATIENTS, 
   INITIAL_CAREGIVER, 
+  MOCK_CAREGIVERS,
   INITIAL_DOCTOR, 
+  MOCK_DOCTORS,
   INITIAL_REMINDERS, 
   INITIAL_SESSIONS, 
   INITIAL_ALERTS, 
@@ -30,7 +32,11 @@ const STORAGE_KEYS = {
   PATIENTS_LIST: 'mindora_patients_list_v1',
   ACTIVE_PATIENT_ID: 'mindora_active_patient_id_v1',
   CAREGIVER: 'mindora_caregiver_v1',
+  CAREGIVERS_LIST: 'mindora_caregivers_list_v1',
+  ACTIVE_CAREGIVER_ID: 'mindora_active_caregiver_id_v1',
   DOCTOR: 'mindora_doctor_v1',
+  DOCTORS_LIST: 'mindora_doctors_list_v1',
+  ACTIVE_DOCTOR_ID: 'mindora_active_doctor_id_v1',
   ACTIVITY_PLANS: 'mindora_activity_plans_v1',
   PAIRING_REQUESTS: 'mindora_pairing_requests_v1',
   LINKED_DEVICES: 'mindora_linked_devices_v1',
@@ -72,14 +78,50 @@ export class StorageService {
   }
 
   // Caregiver Profile
-  static getCaregiver(): CaregiverProfile {
-    if (!this.isBrowser()) return INITIAL_CAREGIVER;
+  static getAllCaregivers(): CaregiverProfile[] {
+    if (!this.isBrowser()) return MOCK_CAREGIVERS;
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.CAREGIVER);
-      return data ? JSON.parse(data) : INITIAL_CAREGIVER;
+      const data = localStorage.getItem(STORAGE_KEYS.CAREGIVERS_LIST);
+      return data ? JSON.parse(data) : MOCK_CAREGIVERS;
     } catch {
-      return INITIAL_CAREGIVER;
+      return MOCK_CAREGIVERS;
     }
+  }
+
+  static saveAllCaregivers(caregivers: CaregiverProfile[]): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.CAREGIVERS_LIST, JSON.stringify(caregivers));
+  }
+
+  static getActiveCaregiverId(): string {
+    if (!this.isBrowser()) return INITIAL_CAREGIVER.id;
+    return localStorage.getItem(STORAGE_KEYS.ACTIVE_CAREGIVER_ID) || INITIAL_CAREGIVER.id;
+  }
+
+  static setActiveCaregiverId(id: string): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.ACTIVE_CAREGIVER_ID, id);
+    const list = this.getAllCaregivers();
+    const found = list.find(c => c.id === id);
+    if (found) {
+      localStorage.setItem(STORAGE_KEYS.CAREGIVER, JSON.stringify(found));
+    }
+    window.dispatchEvent(new CustomEvent('mindora-caregiver-changed', { detail: { caregiverId: id } }));
+  }
+
+  static getCaregiver(): CaregiverProfile {
+    const activeId = this.getActiveCaregiverId();
+    const list = this.getAllCaregivers();
+    return list.find(c => c.id === activeId) || list[0] || INITIAL_CAREGIVER;
+  }
+
+  static saveCaregiver(caregiver: CaregiverProfile): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.CAREGIVER, JSON.stringify(caregiver));
+    const list = this.getAllCaregivers();
+    const updated = list.map(c => c.id === caregiver.id ? caregiver : c);
+    if (!updated.some(c => c.id === caregiver.id)) updated.push(caregiver);
+    this.saveAllCaregivers(updated);
   }
 
   // Reminders
@@ -457,20 +499,150 @@ export class StorageService {
     window.dispatchEvent(new CustomEvent('mindora-journey-updated', { detail: { patientId, progress: { completedSteps: [], currentStepIndex: 0 } } }));
   }
 
-  // Doctor Profile
-  static getDoctor(): DoctorProfile {
-    if (!this.isBrowser()) return INITIAL_DOCTOR;
+  // Doctor Profile & Multi-Doctor Management
+  static getAllDoctors(): DoctorProfile[] {
+    if (!this.isBrowser()) return MOCK_DOCTORS;
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.DOCTOR);
-      return data ? JSON.parse(data) : INITIAL_DOCTOR;
+      const data = localStorage.getItem(STORAGE_KEYS.DOCTORS_LIST);
+      return data ? JSON.parse(data) : MOCK_DOCTORS;
     } catch {
-      return INITIAL_DOCTOR;
+      return MOCK_DOCTORS;
     }
+  }
+
+  static saveAllDoctors(doctors: DoctorProfile[]): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.DOCTORS_LIST, JSON.stringify(doctors));
+  }
+
+  static getActiveDoctorId(): string {
+    if (!this.isBrowser()) return INITIAL_DOCTOR.id;
+    return localStorage.getItem(STORAGE_KEYS.ACTIVE_DOCTOR_ID) || INITIAL_DOCTOR.id;
+  }
+
+  static setActiveDoctorId(id: string): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.ACTIVE_DOCTOR_ID, id);
+    const docs = this.getAllDoctors();
+    const found = docs.find(d => d.id === id);
+    if (found) {
+      localStorage.setItem(STORAGE_KEYS.DOCTOR, JSON.stringify(found));
+    }
+    window.dispatchEvent(new CustomEvent('mindora-doctor-changed', { detail: { doctorId: id } }));
+  }
+
+  static getDoctor(): DoctorProfile {
+    const activeId = this.getActiveDoctorId();
+    const docs = this.getAllDoctors();
+    return docs.find(d => d.id === activeId) || docs[0] || INITIAL_DOCTOR;
   }
 
   static saveDoctor(doctor: DoctorProfile): void {
     if (!this.isBrowser()) return;
     localStorage.setItem(STORAGE_KEYS.DOCTOR, JSON.stringify(doctor));
+    const allDocs = this.getAllDoctors();
+    const updated = allDocs.map(d => d.id === doctor.id ? doctor : d);
+    if (!updated.some(d => d.id === doctor.id)) updated.push(doctor);
+    this.saveAllDoctors(updated);
+  }
+
+  // Patient Cohort Queries segregated by Doctor
+  static getPatientsForDoctor(doctorId: string): PatientProfile[] {
+    const all = this.getAllPatients();
+    const doctor = this.getAllDoctors().find(d => d.id === doctorId);
+    return all.filter(p => p.doctorId === doctorId || (doctor?.linkedPatientIds && doctor.linkedPatientIds.includes(p.id)));
+  }
+
+  // Patient Cohort Queries segregated by Caregiver
+  static getPatientsForCaregiver(caregiverId: string): PatientProfile[] {
+    const all = this.getAllPatients();
+    const caregiver = this.getAllCaregivers().find(c => c.id === caregiverId);
+    return all.filter(p => p.caregiverId === caregiverId || (caregiver?.linkedPatientIds && caregiver.linkedPatientIds.includes(p.id)));
+  }
+
+  // Doctor adds a new patient to their cohort
+  static addNewPatient(newPatient: PatientProfile): void {
+    const all = this.getAllPatients();
+    const updated = [newPatient, ...all.filter(p => p.id !== newPatient.id)];
+    this.saveAllPatients(updated);
+
+    if (newPatient.doctorId) {
+      const docs = this.getAllDoctors();
+      const doc = docs.find(d => d.id === newPatient.doctorId);
+      if (doc && !doc.linkedPatientIds.includes(newPatient.id)) {
+        doc.linkedPatientIds.push(newPatient.id);
+        this.saveAllDoctors(docs);
+      }
+    }
+
+    if (newPatient.caregiverId) {
+      const cgs = this.getAllCaregivers();
+      const cg = cgs.find(c => c.id === newPatient.caregiverId);
+      if (cg && !cg.linkedPatientIds.includes(newPatient.id)) {
+        cg.linkedPatientIds.push(newPatient.id);
+        this.saveAllCaregivers(cgs);
+      }
+    }
+
+    apiClient.patients.create(newPatient).catch(err => {
+      console.warn('[Storage] Offline patient create queued:', err);
+    });
+
+    window.dispatchEvent(new CustomEvent('mindora-patient-added', { detail: newPatient }));
+  }
+
+  // Assign Caregiver to Patient (Doctor or Admin authority)
+  static assignCaregiverToPatient(patientId: string, caregiverId: string): void {
+    const all = this.getAllPatients();
+    const cgs = this.getAllCaregivers();
+    const targetCg = cgs.find(c => c.id === caregiverId);
+
+    const updated = all.map(p => {
+      if (p.id === patientId) {
+        return {
+          ...p,
+          caregiverId,
+          caregiverName: targetCg?.name || p.caregiverName
+        };
+      }
+      return p;
+    });
+    this.saveAllPatients(updated);
+
+    if (targetCg && !targetCg.linkedPatientIds.includes(patientId)) {
+      targetCg.linkedPatientIds.push(patientId);
+      this.saveAllCaregivers(cgs);
+    }
+
+    apiClient.patients.assignCaregiver(patientId, caregiverId).catch(err => {
+      console.warn('[Storage] Offline caregiver assignment queued:', err);
+    });
+
+    window.dispatchEvent(new CustomEvent('mindora-caregiver-assigned', { detail: { patientId, caregiverId } }));
+  }
+
+  // Update Doctor Verification Status (Admin authority)
+  static updateDoctorVerification(doctorId: string, status: 'approved' | 'rejected' | 'revoked', reason?: string): void {
+    const docs = this.getAllDoctors();
+    const updated = docs.map(d => {
+      if (d.id === doctorId) {
+        return {
+          ...d,
+          verificationStatus: status,
+          rejectionReason: reason,
+          approvedAt: status === 'approved' ? new Date().toISOString() : undefined,
+          approvedBy: status === 'approved' ? 'admin@mindora.health' : undefined
+        };
+      }
+      return d;
+    });
+    this.saveAllDoctors(updated);
+    const apiAction = status === 'approved' ? 'approve' : status === 'rejected' ? 'reject' : 'revoke';
+    apiClient.admin.verifyDoctor(doctorId, apiAction, reason).catch(err => {
+      console.warn('[Storage] Offline doctor verification queued:', err);
+    });
+
+    window.dispatchEvent(new CustomEvent('mindora-doctor-verified', { detail: { doctorId, status } }));
   }
 
   // Doctor Activity Prescription & Regimen Plans
@@ -800,7 +972,10 @@ export class StorageService {
 
       if (doctorsRes.status === 'fulfilled' && doctorsRes.value.data?.items?.length) {
         const docs = doctorsRes.value.data.items;
-        if (docs[0]) this.saveDoctor(docs[0]);
+        this.saveAllDoctors(docs);
+        const activeDocId = this.getActiveDoctorId();
+        const activeDoc = docs.find(d => d.id === activeDocId) || docs[0];
+        if (activeDoc) this.saveDoctor(activeDoc);
       }
 
       if (pairingsRes.status === 'fulfilled' && pairingsRes.value.data?.items?.length) {

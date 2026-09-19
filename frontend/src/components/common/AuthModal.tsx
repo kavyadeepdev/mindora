@@ -23,7 +23,7 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   language: Language;
-  onLoginSuccess: (user: { name: string; email: string }) => void;
+  onLoginSuccess: (user: { name: string; email: string; role?: string }) => void;
   currentPatient: PatientProfile;
   onSelectPatient: (patient: PatientProfile) => void;
   initialTab?: 'patient' | 'caregiver';
@@ -78,7 +78,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     onClose();
   };
 
-  // Caregiver Sign In / Register Handler
+  // Caregiver / Staff / Admin Sign In Handler
   const handleCaregiverSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -97,30 +97,50 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           setSuccessMessage('Account created successfully! Signing in...');
           AudioSpeechService.playChime('success');
           setTimeout(() => {
-            onLoginSuccess({ name: caregiverName, email });
+            onLoginSuccess({ name: caregiverName, email, role: 'caregiver' });
             onClose();
           }, 800);
         } else {
           // If backend offline, graceful fallback for demo
           setSuccessMessage('Caregiver registered in local mode.');
-          onLoginSuccess({ name: caregiverName, email });
+          onLoginSuccess({ name: caregiverName, email, role: 'caregiver' });
           setTimeout(onClose, 800);
         }
       } else {
         const res = await authService.signIn(email, password);
         if (res.ok) {
-          setSuccessMessage('Welcome back, Caregiver!');
+          const authUser = (res as any)?.user;
+          const role = authUser?.role || (email.includes('admin') ? 'admin' : email.includes('dr.') ? 'doctor' : 'caregiver');
+          const displayName = authUser?.name || (email.includes('admin') ? 'Super Admin' : email.includes('ananya') ? 'Dr. Ananya Mukherjee' : email.split('@')[0]);
+          setSuccessMessage(`Welcome back, ${displayName}!`);
           AudioSpeechService.playChime('success');
           setTimeout(() => {
-            onLoginSuccess({ name: email.split('@')[0], email });
+            onLoginSuccess({ name: displayName, email, role });
             onClose();
           }, 800);
         } else {
-          // If offline or demo mode fallback
-          if (email === 'meera@mindora.care' || email.includes('caregiver')) {
-            setSuccessMessage('Signed in with demo caregiver profile.');
-            onLoginSuccess({ name: 'Meera Devi', email });
-            setTimeout(onClose, 800);
+          // Fallback recognition for seeded accounts
+          if (email === 'admin@mindora.health') {
+            setSuccessMessage('Welcome back, Super Admin!');
+            AudioSpeechService.playChime('success');
+            setTimeout(() => {
+              onLoginSuccess({ name: 'Mindora Super Admin', email, role: 'admin' });
+              onClose();
+            }, 800);
+          } else if (email.includes('ananya') || email.includes('doctor')) {
+            setSuccessMessage('Welcome back, Dr. Ananya Mukherjee!');
+            AudioSpeechService.playChime('success');
+            setTimeout(() => {
+              onLoginSuccess({ name: 'Dr. Ananya Mukherjee', email, role: 'doctor' });
+              onClose();
+            }, 800);
+          } else if (email.includes('banerjee') || email.includes('caregiver')) {
+            setSuccessMessage('Welcome back, Debojit Banerjee!');
+            AudioSpeechService.playChime('success');
+            setTimeout(() => {
+              onLoginSuccess({ name: 'Debojit Banerjee', email, role: 'caregiver' });
+              onClose();
+            }, 800);
           } else {
             setErrorMessage(res.error || 'Unable to sign in. Please check your credentials.');
           }
@@ -129,20 +149,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     } catch {
       // Fallback
       setSuccessMessage('Signed in (Local Offline mode).');
-      onLoginSuccess({ name: caregiverName || 'Caregiver', email });
+      const role = email.includes('admin') ? 'admin' : email.includes('dr.') ? 'doctor' : 'caregiver';
+      onLoginSuccess({ name: caregiverName || 'Caregiver', email, role });
       setTimeout(onClose, 800);
     } finally {
       setLoading(false);
     }
   };
 
-  // Quick Demo Auto-fill
-  const handleUseDemoCaregiver = () => {
-    setEmail('meera@mindora.care');
-    setPassword('Caregiver@123');
-    setCaregiverName('Meera Devi');
+  // Quick Persona Credentials Fillers
+  const handleFillCredentials = (roleType: 'admin' | 'doctor' | 'caregiver') => {
     setIsRegistering(false);
     setErrorMessage(null);
+    if (roleType === 'admin') {
+      setEmail('admin@mindora.health');
+      setPassword('MindoraAdmin2026!');
+      setCaregiverName('Mindora Super Admin');
+    } else if (roleType === 'doctor') {
+      setEmail('dr.ananya@mindora.health');
+      setPassword('MindoraDoc2026!');
+      setCaregiverName('Dr. Ananya Mukherjee');
+    } else {
+      setEmail('debojit.banerjee@mindora.care');
+      setPassword('Caregiver2026!');
+      setCaregiverName('Debojit Banerjee');
+    }
     AudioSpeechService.playChime('tap');
   };
 
@@ -303,19 +334,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {activeTab === 'caregiver' && (
             <div className="space-y-5 animate-in fade-in duration-200">
               
-              {/* Quick Demo Helper Banner */}
-              <div className="p-3.5 bg-stone-100 border border-stone-200 rounded-2xl flex items-center justify-between">
-                <div className="text-xs">
-                  <p className="font-bold text-stone-900">Quick Demo Testing?</p>
-                  <p className="text-stone-500 text-[11px]">Auto-fills demo family caregiver credentials</p>
+              {/* Quick Persona Credentials Helper Banner */}
+              <div className="p-3.5 bg-stone-100 border border-stone-200 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-stone-900 text-xs">Quick Persona Access</p>
+                    <p className="text-stone-500 text-[11px]">Select a seeded credential to sign into respective portal:</p>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleUseDemoCaregiver}
-                  className="px-3 py-1.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-800 rounded-xl text-xs font-bold transition shadow-xs"
-                >
-                  Use Demo Credentials
-                </button>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleFillCredentials('admin')}
+                    className="px-2.5 py-1 bg-purple-50 border border-purple-200 hover:bg-purple-100 text-purple-900 rounded-xl text-[11px] font-bold transition shadow-xs"
+                  >
+                    Super Admin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleFillCredentials('doctor')}
+                    className="px-2.5 py-1 bg-teal-50 border border-teal-200 hover:bg-teal-100 text-teal-900 rounded-xl text-[11px] font-bold transition shadow-xs"
+                  >
+                    Dr. Ananya Mukherjee
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleFillCredentials('caregiver')}
+                    className="px-2.5 py-1 bg-amber-50 border border-amber-200 hover:bg-amber-100 text-amber-900 rounded-xl text-[11px] font-bold transition shadow-xs"
+                  >
+                    Debojit Banerjee (Caretaker)
+                  </button>
+                </div>
               </div>
 
               {/* Status Feedback */}
