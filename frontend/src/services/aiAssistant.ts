@@ -18,7 +18,7 @@ export interface VoiceAssistantResponse {
   isAiGenerated: boolean;
 }
 
-export class GeminiClientService {
+export class AiAssistantService {
   /**
    * Fetch personalized activity recommendation
    */
@@ -38,7 +38,7 @@ export class GeminiClientService {
     }
 
     try {
-      const res = await fetch('/api/gemini/recommendation', {
+      const res = await fetch('/api/ai/recommendation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -85,7 +85,7 @@ export class GeminiClientService {
     }
 
     try {
-      const res = await fetch('/api/gemini/caregiver-summary', {
+      const res = await fetch('/api/ai/caregiver-summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -139,7 +139,7 @@ export class GeminiClientService {
     }
 
     try {
-      const res = await fetch('/api/gemini/voice-assist', {
+      const res = await fetch('/api/ai/voice-assist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

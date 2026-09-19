@@ -51,7 +51,7 @@ import {
   AccessibilitySettings 
 } from '../../types';
 import { StorageService } from '../../services/storage';
-import { GeminiClientService, CaregiverAiSummary } from '../../services/geminiClient';
+import { AiAssistantService, CaregiverAiSummary } from '../../services/aiAssistant';
 import { MOCK_PERFORMANCE_TRENDS } from '../../data/mockData';
 import { getTranslation } from '../../utils/translations';
 
@@ -168,7 +168,7 @@ export const CaregiverDashboard: React.FC<CaregiverDashboardProps> = ({
   const handleGenerateSummary = async () => {
     setLoadingSummary(true);
     try {
-      const summary = await GeminiClientService.getCaregiverSummary();
+      const summary = await AiAssistantService.getCaregiverSummary();
       setAiSummary(summary);
     } catch {
       // handled

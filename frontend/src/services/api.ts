@@ -1,5 +1,6 @@
 import { 
   GameSession, 
+  GameType,
   PatientProfile, 
   Reminder, 
   CaregiverAlert, 

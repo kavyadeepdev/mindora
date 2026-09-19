@@ -31,7 +31,7 @@ mindora/
 ├── frontend/              # React 19 application (@mindora/frontend)
 │   ├── src/
 │   │   ├── components/    # games, caregiver, patient, landing, common
-│   │   ├── services/      # api.ts, storage.ts, adaptiveEngine.ts, audioSpeech.ts, geminiClient.ts
+│   │   ├── services/      # api.ts, storage.ts, adaptiveEngine.ts, audioSpeech.ts, aiAssistant.ts
 │   │   ├── data/          # Mock data & cultural items
 │   │   ├── utils/         # Translations & language helpers
 │   │   └── types.ts       # TypeScript domain models

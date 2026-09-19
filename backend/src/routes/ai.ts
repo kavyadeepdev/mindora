@@ -21,6 +21,20 @@ const analyzePatientSchema = z.object({
   sessions: z.array(z.record(z.unknown())).optional(),
 });
 
+const caregiverSummarySchema = z.object({
+  patientName: z.string().default("Anima Devi"),
+  sessionData: z.array(z.record(z.unknown())).optional(),
+  adherenceRate: z.string().default("85%"),
+  recentAlerts: z.array(z.record(z.unknown())).optional(),
+});
+
+const voiceAssistSchema = z.object({
+  query: z.string().default(""),
+  patientName: z.string().default("Anima Devi"),
+  reminders: z.array(z.record(z.unknown())).optional(),
+  todayActivities: z.array(z.unknown()).optional(),
+});
+
 export const aiRoutes: FastifyPluginAsync = async (fastify) => {
   // Check whether the external FastAPI recommendation service is reachable
   fastify.get("/service-status", async (_request, reply) => {
@@ -315,6 +329,82 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
         model_used: "nvidia/llama-3.1-nemotron-70b-instruct (Fallback)",
         source: "fallback_engine",
       },
+    });
+  });
+
+  // Natural Language Caregiver Summary
+  fastify.post("/caregiver-summary", async (request, reply) => {
+    const parseResult = caregiverSummarySchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({ error: parseResult.error.format() });
+    }
+
+    const payload = parseResult.data;
+
+    if (config.fastapiServiceUrl) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4000);
+
+        const response = await fetch(`${config.fastapiServiceUrl}/api/v1/caregiver-summary`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        if (response.ok) {
+          const result = (await response.json()) as Record<string, unknown>;
+          return reply.send({ ...result, isAiGenerated: true });
+        }
+      } catch {
+        fastify.log.warn(`FastAPI service unreachable at ${config.fastapiServiceUrl}. Using rules-based caregiver summary.`);
+      }
+    }
+
+    // Calm, non-diagnostic caregiver summary fallback
+    return reply.send({
+      summary: `${payload.patientName} maintained active participation in scheduled cognitive activities this week with steady response patterns across familiar cultural memory items.`,
+      observationBulletPoints: [
+        "Memory match sessions showed high engagement with familiar garden objects.",
+        "Morning medication and hydration reminders had high logged adherence.",
+        "Adaptive difficulty maintained level 2-3 comfortably.",
+      ],
+      isAiGenerated: false,
+    });
+  });
+
+  // Voice Assistant Endpoint
+  fastify.post("/voice-assist", async (request, reply) => {
+    const parseResult = voiceAssistSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({ error: parseResult.error.format() });
+    }
+
+    const payload = parseResult.data;
+    const q = (payload.query || "").toLowerCase();
+
+    let answer = `I am here with you, ${payload.patientName}.`;
+    if (q.includes("medicine") || q.includes("pill") || q.includes("dawakhana") || q.includes("oukhod")) {
+      answer = "Your medicine reminder is scheduled for 9:00 AM. A glass of lukewarm water is also kept ready.";
+    } else if (q.includes("activity") || q.includes("next") || q.includes("game")) {
+      answer = "Your next activity is the Memory Match with familiar flowers from your garden!";
+    } else if (q.includes("water") || q.includes("drink") || q.includes("pani")) {
+      answer = "It is time for your morning hydration. Please take a few gentle sips of water.";
+    } else if (q.includes("doctor") || q.includes("appointment")) {
+      answer = "Doctor Baruah's routine wellness visit is scheduled for 4:30 PM with Meera.";
+    } else if (q.includes("today") || q.includes("schedule")) {
+      answer = "Today you have your morning walk, memory activity, and afternoon tea with family.";
+    } else if (q.includes("perform") || q.includes("score")) {
+      answer = "You completed your morning session with wonderful focus! 88% accuracy on memory activities.";
+    } else {
+      answer = "You are doing very well today. All your daily reminders are safe and on schedule.";
+    }
+
+    return reply.send({
+      answer,
+      isAiGenerated: false,
     });
   });
 };
