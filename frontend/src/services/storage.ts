@@ -8,7 +8,10 @@ import {
   AdaptiveDifficultyState, 
   AccessibilitySettings, 
   PatientActivityPlan, 
-  DevicePairingRequest 
+  DevicePairingRequest,
+  GameType,
+  PatientFlowState,
+  PatientFlowStep
 } from '../types';
 import { 
   INITIAL_PATIENT, 
@@ -497,6 +500,29 @@ export class StorageService {
     if (!this.isBrowser()) return;
     localStorage.removeItem(`mindora_journey_${patientId}`);
     window.dispatchEvent(new CustomEvent('mindora-journey-updated', { detail: { patientId, progress: { completedSteps: [], currentStepIndex: 0 } } }));
+  }
+
+  // Linear Patient Experience Flow State (Greeting -> Activity Intro -> Game -> Performance -> Reminders -> Complete)
+  static getPatientFlowState(patientId: string): PatientFlowState {
+    if (!this.isBrowser()) return { step: 'greeting', activityIndex: 0, reminderIndex: 0 };
+    try {
+      const data = localStorage.getItem(`mindora_flow_${patientId}`);
+      return data ? JSON.parse(data) : { step: 'greeting', activityIndex: 0, reminderIndex: 0 };
+    } catch {
+      return { step: 'greeting', activityIndex: 0, reminderIndex: 0 };
+    }
+  }
+
+  static savePatientFlowState(patientId: string, state: PatientFlowState): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(`mindora_flow_${patientId}`, JSON.stringify(state));
+    window.dispatchEvent(new CustomEvent('mindora-flow-updated', { detail: { patientId, state } }));
+  }
+
+  static resetPatientFlowState(patientId: string): void {
+    if (!this.isBrowser()) return;
+    localStorage.removeItem(`mindora_flow_${patientId}`);
+    window.dispatchEvent(new CustomEvent('mindora-flow-updated', { detail: { patientId, state: { step: 'greeting', activityIndex: 0, reminderIndex: 0 } } }));
   }
 
   // Doctor Profile & Multi-Doctor Management

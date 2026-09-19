@@ -218,3 +218,12 @@ export interface DevicePairingRequest {
   approvedAt?: string;
   token?: string;
 }
+
+export type PatientFlowStep = 'greeting' | 'activity-intro' | 'activity-performance' | 'reminders' | 'all-complete';
+
+export interface PatientFlowState {
+  step: PatientFlowStep;
+  activityIndex: number;
+  reminderIndex: number;
+  lastCompletedGame?: GameType;
+}
