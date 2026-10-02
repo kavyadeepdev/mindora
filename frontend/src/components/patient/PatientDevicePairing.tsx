@@ -76,7 +76,7 @@ export const PatientDevicePairing: React.FC<PatientDevicePairingProps> = ({
     const approved = StorageService.approveDevicePairingRequest(
       pairingRequest.id,
       'patient-anima-01',
-      'Dr. Debojit Sarma & Meera Devi'
+      'Care team approval'
     );
     if (approved) {
       setApprovedState(approved);

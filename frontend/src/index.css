@@ -1,1 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --color-canvas: #faf9f5;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f5f0e8;
+  --color-ink: #1c1917;
+  --color-body: #44403c;
+  --color-muted: #78716c;
+  --color-hairline: #e7e0d3;
+  --color-primary: #9a3412;
+  --color-primary-strong: #7c2d12;
+  --color-primary-soft: #fbe9dc;
+  --color-clinical: #0f766e;
+  --color-clinical-soft: #dcf5f0;
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Elderly friendly focus states, always visible */
+:focus-visible {
+  outline: 3px solid #9a3412;
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* Calm editorial image treatment */
+.mindora-photo {
+  object-fit: cover;
+  border-radius: 20px;
+}
+
+/* Gentle entrance, respects reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  .mindora-rise {
+    animation: mindora-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .mindora-rise-1 { animation-delay: 0.06s; }
+  .mindora-rise-2 { animation-delay: 0.14s; }
+  .mindora-rise-3 { animation-delay: 0.22s; }
+}
+
+@keyframes mindora-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mindora-rise {
+    animation: none;
+  }
+}
