@@ -303,7 +303,7 @@ export const CaregiverDashboard: React.FC<CaregiverDashboardProps> = ({
                   {patient.age} yrs • {patient.gender} • {patient.location}
                 </p>
                 <p className="text-[11px] text-amber-900 font-medium truncate">
-                  Physician: {patient.doctorName || 'Dr. Ananya Mukherjee'}
+                  Physician: {patient.doctorName || 'Assigned clinician'}
                 </p>
               </div>
             </div>
@@ -484,7 +484,7 @@ export const CaregiverDashboard: React.FC<CaregiverDashboardProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-stone-500 mt-1">
-                  Assigned Clinician: <strong className="text-stone-700">Dr. Debojit Sarma</strong> • Primary Dialect: <span className="uppercase font-semibold">{patient.language}</span>
+                  Assigned Clinician: <strong className="text-stone-700">{patient.doctorName || 'Assigned clinician'}</strong> • Primary Dialect: <span className="uppercase font-semibold">{patient.language}</span>
                 </p>
               </div>
             </div>

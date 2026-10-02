@@ -1,15 +1,16 @@
-import { 
-  GameSession, 
-  PatientProfile, 
-  CaregiverProfile, 
-  DoctorProfile, 
-  Reminder, 
-  CaregiverAlert, 
-  AdaptiveDifficultyState, 
-  AccessibilitySettings, 
-  PatientActivityPlan, 
+import {
+  GameSession,
+  PatientProfile,
+  CaregiverProfile,
+  DoctorProfile,
+  Reminder,
+  CaregiverAlert,
+  AdaptiveDifficultyState,
+  AccessibilitySettings,
+  PatientActivityPlan,
   DevicePairingRequest,
   GameType,
+  Language,
   PatientFlowState,
   PatientFlowStep
 } from '../types';
@@ -51,6 +52,7 @@ const STORAGE_KEYS = {
   OFFLINE_OVERRIDE: 'mindora_offline_override_v1',
   PENDING_SYNC: 'mindora_pending_sync_v1',
   ACCESSIBILITY: 'mindora_accessibility_v1',
+  UI_LANGUAGE: 'mindora_ui_language_v1',
   CULTURAL_MEMORIES: 'mindora_cultural_memories_v1',
   FAMILIAR_MEMORIES: 'mindora_familiar_memories_v1',
   MEMORY_CARDS: 'mindora_memory_cards_v1',
@@ -398,6 +400,25 @@ export class StorageService {
     if (!this.isBrowser()) return;
     localStorage.setItem(STORAGE_KEYS.ACCESSIBILITY, JSON.stringify(settings));
     window.dispatchEvent(new CustomEvent('mindora-accessibility-changed', { detail: { settings } }));
+  }
+
+  // Interface language preference. English is the default; the active
+  // patient's own language never overrides the UI choice.
+  static getUiLanguage(): Language {
+    const supported: Language[] = ['en', 'hi', 'as', 'bn', 'kn'];
+    if (!this.isBrowser()) return 'en';
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.UI_LANGUAGE);
+      if (saved && (supported as string[]).includes(saved)) return saved as Language;
+    } catch {
+      // fall through to default
+    }
+    return 'en';
+  }
+
+  static saveUiLanguage(lang: Language): void {
+    if (!this.isBrowser()) return;
+    localStorage.setItem(STORAGE_KEYS.UI_LANGUAGE, lang);
   }
 
   // Per-Patient Accessibility Settings (editable by Doctor / Caregiver)

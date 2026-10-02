@@ -1,23 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  HeartHandshake, 
-  Wifi, 
-  WifiOff, 
-  User, 
-  ShieldCheck, 
-  Compass, 
-  Volume2, 
-  VolumeX, 
-  Type, 
-  Contrast, 
-  RefreshCw,
-  Sparkles,
-  HelpCircle,
+import {
+  HeartHandshake,
+  User,
+  Type,
+  Contrast,
   RotateCcw,
   LogOut,
   LogIn,
-  Stethoscope,
-  Smartphone,
+  Volume2,
+  VolumeX,
   ShieldAlert
 } from 'lucide-react';
 import { Language, AccessibilitySettings, PatientProfile, SubdomainPortal } from '../../types';
@@ -32,19 +23,18 @@ interface NavbarProps {
   onLanguageChange: (lang: Language) => void;
   accessibility: AccessibilitySettings;
   onAccessibilityChange: (settings: AccessibilitySettings) => void;
-  isOffline: boolean;
-  onToggleOffline: () => void;
-  pendingSyncCount: number;
-  onSync: () => void;
-  isSyncing: boolean;
-  showDemoGuide: boolean;
-  onToggleDemoGuide: () => void;
   currentUser: { name: string; email: string; role?: string } | null;
   onOpenAuthModal: (tab?: 'patient' | 'caregiver' | 'doctor') => void;
   onSignOut: () => void;
   patient: PatientProfile;
   onSwitchPortal?: (portal: SubdomainPortal) => void;
 }
+
+const roleLabel: Record<string, string> = {
+  doctor: 'Doctor',
+  caregiver: 'Caregiver',
+  admin: 'Admin'
+};
 
 export const Navbar: React.FC<NavbarProps> = ({
   portal,
@@ -54,13 +44,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLanguageChange,
   accessibility,
   onAccessibilityChange,
-  isOffline,
-  onToggleOffline,
-  pendingSyncCount,
-  onSync,
-  isSyncing,
-  showDemoGuide,
-  onToggleDemoGuide,
   currentUser,
   onOpenAuthModal,
   onSignOut,
@@ -70,338 +53,183 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showAccessMenu, setShowAccessMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  const goHome = () => {
+    if (portal === 'doctor') onNavigate('doctor');
+    else if (portal === 'caretaker') onNavigate('caregiver');
+    else if (portal === 'patient') onNavigate('patient');
+    else if (portal === 'admin') onNavigate('admin');
+    else onNavigate('landing');
+  };
+
+  const patientInitials = patient.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-18">
-          
-          {/* Brand Logo & Name */}
-          <div className="flex items-center gap-3">
-            <button
-              id="nav-logo-btn"
-              onClick={() => {
-                if (portal === 'doctor') onNavigate('doctor');
-                else if (portal === 'caretaker') onNavigate('caregiver');
-                else if (portal === 'patient') onNavigate('patient');
-                else if (portal === 'admin') onNavigate('admin');
-                else onNavigate('landing');
-              }}
-              className="flex items-center gap-3 text-left focus:outline-none group"
-            >
-              <div className="w-11 h-11 rounded-2xl bg-amber-600/10 border border-amber-600/25 flex items-center justify-center text-amber-800 shadow-xs group-hover:bg-amber-600/15 transition">
-                {portal === 'doctor' ? (
-                  <Stethoscope className="w-6 h-6 text-teal-700" />
-                ) : portal === 'admin' ? (
-                  <ShieldAlert className="w-6 h-6 text-purple-700" />
-                ) : (
-                  <HeartHandshake className="w-6 h-6 text-amber-700" />
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-xl tracking-tight text-stone-900 font-['Outfit']">
-                    {getTranslation('appName', language)}
-                  </span>
-                  <span className={`hidden md:inline-flex text-[11px] font-semibold tracking-wide border px-2.5 py-0.5 rounded-full ${
-                    portal === 'doctor'
-                      ? 'bg-teal-50 text-teal-900 border-teal-200'
-                      : portal === 'admin'
-                      ? 'bg-purple-50 text-purple-900 border-purple-200'
-                      : 'bg-amber-100/80 text-amber-900 border-amber-200'
-                  }`}>
-                    {portal === 'doctor' ? 'Clinician' :
-                     portal === 'caretaker' ? 'Caretaker' :
-                     portal === 'admin' ? 'Super Admin' :
-                     getTranslation('careCompanion', language)}
-                  </span>
-                </div>
-                <p className="text-xs text-stone-500 font-medium hidden sm:block">
-                  {getTranslation('appTagline', language)}
-                </p>
-              </div>
-            </button>
-          </div>
+    <header className="sticky top-0 z-40 bg-[#faf9f5]/90 backdrop-blur-md border-b border-[#e7e0d3]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-[68px] gap-3">
 
-          {/* Portal / Subdomain Indicator Badge (Clean, zero mode buttons) */}
-          <div className="hidden md:flex items-center gap-2">
-            {portal === 'patient' && (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-bold text-amber-950">{patient.name}</span>
-                <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-full">
-                  Paired Device
-                </span>
-              </div>
-            )}
+          <button
+            id="nav-logo-btn"
+            onClick={goHome}
+            className="flex items-center gap-3 text-left rounded-2xl p-1 focus:outline-none group min-h-[52px]"
+            aria-label="Mindora home"
+          >
+            <span className="w-11 h-11 rounded-2xl bg-[#9a3412] text-white flex items-center justify-center shadow-[0_8px_24px_rgba(154,52,18,0.25)] group-hover:bg-[#7c2d12] transition">
+              <HeartHandshake className="w-5 h-5" />
+            </span>
+            <span className="font-display font-semibold text-[22px] leading-none text-[#1c1917]">
+              {getTranslation('appName', language)}
+            </span>
+          </button>
 
-            {portal === 'doctor' && (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 border border-teal-200">
-                <Stethoscope className="w-4 h-4 text-teal-700" />
-                <span className="text-xs font-extrabold text-teal-950">Clinical Control Portal</span>
-                <span className="text-[10px] font-semibold text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded-full">
-                  {currentUser?.role === 'doctor' ? currentUser.name : 'Clinician'}
-                </span>
-              </div>
-            )}
-
-            {portal === 'admin' && (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-200">
-                <ShieldAlert className="w-4 h-4 text-purple-700" />
-                <span className="text-xs font-extrabold text-purple-950">Super Admin Governance</span>
-                <span className="text-[10px] font-semibold text-purple-700 bg-purple-100/70 px-2 py-0.5 rounded-full">
-                  Statutory Oversight
-                </span>
-              </div>
-            )}
-
-            {portal === 'caretaker' && (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200">
-                <ShieldCheck className="w-4 h-4 text-amber-700" />
-                <span className="text-xs font-extrabold text-amber-950">Caretaker Portal</span>
-                <span className="text-[10px] font-semibold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-full">
-                  Family Care
-                </span>
-              </div>
-            )}
-
-            {portal === 'landing' && (
-              <div className="flex items-center gap-2 text-xs font-medium text-stone-500">
-                <span>Cognitive Care & Dementia Platform</span>
-              </div>
-            )}
-          </div>
-
-          {/* Controls: Language, Accessibility, Offline Status, Demo Guide */}
           <div className="flex items-center gap-2">
-            
-            {/* Offline / Synced Indicator Badge */}
-            <div className="flex items-center">
-              {isOffline ? (
-                <button
-                  id="nav-offline-toggle-btn"
-                  onClick={onToggleOffline}
-                  title="Click to toggle Online/Offline mode"
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition"
-                >
-                  <WifiOff className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                  <span className="hidden md:inline">{getTranslation('offlineMode', language)}</span>
-                  {pendingSyncCount > 0 && (
-                    <span className="ml-0.5 bg-amber-600 text-white px-1.5 py-0.2 rounded-full font-bold text-[10px]">
-                      {pendingSyncCount}
-                    </span>
-                  )}
-                </button>
-              ) : (
-                <button
-                  id="nav-online-toggle-btn"
-                  onClick={onToggleOffline}
-                  title="Click to toggle offline mode simulation"
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition"
-                >
-                  <Wifi className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="hidden md:inline">{getTranslation('online', language)}</span>
-                  {pendingSyncCount > 0 ? (
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSync();
-                      }}
-                      className="ml-1 bg-amber-500 text-white px-1.5 py-0.5 rounded-md font-bold text-[10px] flex items-center gap-1 hover:bg-amber-600"
-                    >
-                      <RefreshCw className={`w-2.5 h-2.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                      Sync {pendingSyncCount}
-                    </span>
-                  ) : (
-                    <span className="text-emerald-700 text-[11px]">{getTranslation('synced', language)}</span>
-                  )}
-                </button>
-              )}
-            </div>
+            <select
+              id="language-select-dropdown"
+              value={language}
+              onChange={(e) => onLanguageChange(e.target.value as Language)}
+              className="bg-white border border-[#e7e0d3] text-[#1c1917] text-[12px] font-bold rounded-full px-3 py-2.5 min-h-[44px] cursor-pointer"
+              title="Select interface language"
+              aria-label="Select interface language"
+            >
+              <option value="en">EN</option>
+              <option value="hi">हिंदी</option>
+              <option value="as">অসমীয়া</option>
+              <option value="bn">বাংলা</option>
+              <option value="kn">ಕನ್ನಡ</option>
+            </select>
 
-            {/* Language Selector */}
-            <div className="relative">
-              <select
-                id="language-select-dropdown"
-                value={language}
-                onChange={(e) => onLanguageChange(e.target.value as Language)}
-                className="bg-stone-100 border border-stone-200 text-stone-800 text-xs font-semibold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
-                title="Select interface language"
-              >
-                <option value="en">English</option>
-                <option value="hi">हिंदी (Hindi)</option>
-                <option value="as">অসমীয়া (Assamese)</option>
-                <option value="bn">বাংলা (Bengali)</option>
-                <option value="kn">ಕನ್ನಡ (Kannada)</option>
-              </select>
-            </div>
-
-            {/* Accessibility Quick Panel */}
             <div className="relative">
               <button
                 id="accessibility-options-btn"
                 onClick={() => setShowAccessMenu(!showAccessMenu)}
-                className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1 transition ${
+                className={`w-[44px] h-[44px] rounded-full border flex items-center justify-center transition ${
                   accessibility.largeText || accessibility.highContrast
-                    ? 'bg-amber-100 text-amber-900 border-amber-300'
-                    : 'bg-stone-100 text-stone-700 border-stone-200 hover:bg-stone-200/60'
+                    ? 'bg-[#9a3412] text-white border-[#9a3412]'
+                    : 'bg-white text-[#44403c] border-[#e7e0d3] hover:bg-[#f5f0e8]'
                 }`}
                 title={getTranslation('elderlyAccessibility', language)}
+                aria-expanded={showAccessMenu}
               >
                 <Type className="w-4 h-4" />
               </button>
 
               {showAccessMenu && (
-                <div 
+                <div
                   id="accessibility-dropdown-menu"
-                  className="absolute right-0 mt-2 w-64 bg-white border border-stone-200 rounded-2xl shadow-xl p-3 z-50 text-stone-800 text-xs space-y-2 animate-in fade-in"
+                  className="absolute right-0 mt-2 w-72 bg-white border border-[#e7e0d3] rounded-[20px] shadow-[0_18px_50px_rgba(28,25,23,0.14)] p-3 z-50 text-[13px]"
                 >
-                  <div className="font-bold text-stone-900 pb-1 border-b border-stone-100 flex items-center justify-between">
-                    <span>{getTranslation('elderlyAccessibility', language)}</span>
-                    <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">{getTranslation('friendlyBadge', language)}</span>
-                  </div>
-
-                  <label className="flex items-center justify-between p-1.5 hover:bg-stone-50 rounded-lg cursor-pointer">
-                    <span className="flex items-center gap-2">
-                      <Type className="w-4 h-4 text-stone-600" />
+                  <p className="font-bold text-[#1c1917] px-2 pb-2">{getTranslation('elderlyAccessibility', language)}</p>
+                  <label className="flex items-center justify-between p-2.5 hover:bg-[#faf9f5] rounded-2xl cursor-pointer min-h-[48px]">
+                    <span className="flex items-center gap-2 font-semibold">
+                      <Type className="w-4 h-4" />
                       {getTranslation('largeText', language)}
                     </span>
                     <input
                       type="checkbox"
                       checked={accessibility.largeText}
-                      onChange={(e) =>
-                        onAccessibilityChange({ ...accessibility, largeText: e.target.checked })
-                      }
-                      className="w-4 h-4 text-amber-600 rounded cursor-pointer"
+                      onChange={(e) => onAccessibilityChange({ ...accessibility, largeText: e.target.checked })}
+                      className="w-5 h-5 accent-[#9a3412] cursor-pointer"
                     />
                   </label>
-
-                  <label className="flex items-center justify-between p-1.5 hover:bg-stone-50 rounded-lg cursor-pointer">
-                    <span className="flex items-center gap-2">
-                      <Contrast className="w-4 h-4 text-stone-600" />
+                  <label className="flex items-center justify-between p-2.5 hover:bg-[#faf9f5] rounded-2xl cursor-pointer min-h-[48px]">
+                    <span className="flex items-center gap-2 font-semibold">
+                      <Contrast className="w-4 h-4" />
                       {getTranslation('highContrast', language)}
                     </span>
                     <input
                       type="checkbox"
                       checked={accessibility.highContrast}
-                      onChange={(e) =>
-                        onAccessibilityChange({ ...accessibility, highContrast: e.target.checked })
-                      }
-                      className="w-4 h-4 text-amber-600 rounded cursor-pointer"
+                      onChange={(e) => onAccessibilityChange({ ...accessibility, highContrast: e.target.checked })}
+                      className="w-5 h-5 accent-[#9a3412] cursor-pointer"
                     />
                   </label>
-
-                  <label className="flex items-center justify-between p-1.5 hover:bg-stone-50 rounded-lg cursor-pointer">
-                    <span className="flex items-center gap-2">
-                      {accessibility.audioFeedback ? (
-                        <Volume2 className="w-4 h-4 text-stone-600" />
-                      ) : (
-                        <VolumeX className="w-4 h-4 text-stone-400" />
-                      )}
+                  <label className="flex items-center justify-between p-2.5 hover:bg-[#faf9f5] rounded-2xl cursor-pointer min-h-[48px]">
+                    <span className="flex items-center gap-2 font-semibold">
+                      {accessibility.audioFeedback ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
                       {getTranslation('audioChimesCues', language)}
                     </span>
                     <input
                       type="checkbox"
                       checked={accessibility.audioFeedback}
-                      onChange={(e) =>
-                        onAccessibilityChange({ ...accessibility, audioFeedback: e.target.checked })
-                      }
-                      className="w-4 h-4 text-amber-600 rounded cursor-pointer"
+                      onChange={(e) => onAccessibilityChange({ ...accessibility, audioFeedback: e.target.checked })}
+                      className="w-5 h-5 accent-[#9a3412] cursor-pointer"
                     />
                   </label>
-
-                  <div className="pt-1 border-t border-stone-100">
-                    <button
-                      onClick={() => {
-                        StorageService.resetToDemo();
-                        window.location.reload();
-                      }}
-                      className="w-full text-left flex items-center gap-1.5 text-stone-500 hover:text-red-600 p-1 rounded transition text-[11px]"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      {getTranslation('resetToDemo', language)}
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {
+                      StorageService.resetToDemo();
+                      window.location.reload();
+                    }}
+                    className="w-full mt-1 flex items-center gap-2 p-2.5 rounded-2xl text-[#78716c] hover:text-[#be123c] hover:bg-[#faf9f5] text-[12px] font-semibold min-h-[44px]"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    {getTranslation('resetToDemo', language)}
+                  </button>
                 </div>
               )}
             </div>
 
-            {/* Guided Product Walkthrough Trigger */}
-            <button
-              id="demo-story-guide-toggle"
-              onClick={onToggleDemoGuide}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                showDemoGuide
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100'
-              }`}
-              title="Toggle Guided Product Walkthrough"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-700 fill-amber-300" />
-              <span className="hidden xl:inline">{getTranslation('productTour', language)}</span>
-              <span className="xl:hidden">{getTranslation('tour', language)}</span>
-            </button>
-
-            {/* Caregiver Authentication & User Profile */}
-            <div className="relative pl-1 border-l border-stone-200 flex items-center gap-1.5">
-              {currentUser ? (
+            <div className="pl-1 border-l border-[#e7e0d3] flex items-center gap-2">
+              {portal === 'patient' ? (
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 p-1.5 pr-3 rounded-full bg-white border border-[#e7e0d3] text-[12px] font-bold min-h-[44px]">
+                    <span className="w-8 h-8 rounded-full bg-[#9a3412] text-white flex items-center justify-center text-[12px] font-bold">
+                      {patientInitials}
+                    </span>
+                    <span className="hidden sm:inline max-w-[110px] truncate">{patient.name}</span>
+                  </span>
+                  <button
+                    id="nav-patient-switch-btn"
+                    onClick={() => onOpenAuthModal('patient')}
+                    className="px-4 py-2.5 rounded-full text-[12px] font-bold bg-white hover:bg-[#f5f0e8] text-[#1c1917] border border-[#e7e0d3] min-h-[44px]"
+                  >
+                    {getTranslation('switchUser', language)}
+                  </button>
+                </div>
+              ) : currentUser ? (
                 <div className="relative">
                   <button
                     id="nav-user-profile-btn"
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center gap-2 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200/80 border border-stone-200 text-xs font-bold text-stone-800 transition shadow-2xs"
-                    title="Caregiver Profile & Settings"
+                    className="flex items-center gap-2 p-1.5 pr-3 rounded-full bg-white hover:bg-[#f5f0e8] border border-[#e7e0d3] text-[12px] font-bold min-h-[44px]"
+                    aria-expanded={showUserMenu}
                   >
-                    <div className="w-6 h-6 rounded-lg bg-stone-900 text-white flex items-center justify-center text-[11px] font-black">
+                    <span className="w-8 h-8 rounded-full bg-[#1c1917] text-white flex items-center justify-center text-[13px] font-bold">
                       {currentUser.name.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="hidden sm:inline truncate max-w-[100px]">{currentUser.name}</span>
+                    </span>
+                    <span className="hidden sm:inline max-w-[110px] truncate">{currentUser.name}</span>
                   </button>
-
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white border border-stone-200 rounded-2xl shadow-xl p-3 z-50 text-xs space-y-2 animate-in fade-in">
-                      <div className="pb-2 border-b border-stone-100">
-                        <div className="flex items-center gap-1.5 text-amber-800 font-bold">
-                          <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
-                          <span>{getTranslation('caregiverAccount', language)}</span>
-                        </div>
-                        <p className="font-extrabold text-stone-900 text-sm mt-0.5 truncate">{currentUser.name}</p>
-                        <p className="text-[11px] text-stone-500 truncate">{currentUser.email}</p>
+                    <div className="absolute right-0 mt-2 w-60 bg-white border border-[#e7e0d3] rounded-[20px] shadow-[0_18px_50px_rgba(28,25,23,0.14)] p-2 z-50 text-[13px]">
+                      <div className="px-3 py-2 border-b border-[#f5f0e8] mb-1">
+                        <p className="text-[12px] font-bold text-[#0f766e]">
+                          {roleLabel[currentUser.role || ''] || 'Account'}
+                        </p>
+                        <p className="font-bold truncate mt-1">{currentUser.name}</p>
+                        <p className="text-[12px] text-[#78716c] truncate">{currentUser.email}</p>
                       </div>
-
-                      {currentUser.role === 'admin' && (
+                      {currentUser.role === 'admin' && portal !== 'admin' && (
                         <button
                           onClick={() => {
                             if (onSwitchPortal) onSwitchPortal('admin');
                             else onNavigate('admin');
                             setShowUserMenu(false);
                           }}
-                          className="w-full text-left p-2 hover:bg-purple-50 text-purple-950 rounded-xl font-bold flex items-center gap-2 transition"
+                          className="w-full text-left px-3 py-2.5 hover:bg-[#faf9f5] rounded-2xl font-bold flex items-center gap-2 min-h-[44px]"
                         >
-                          <ShieldAlert className="w-4 h-4 text-purple-700" />
-                          <span>Admin Governance</span>
+                          <ShieldAlert className="w-4 h-4" />
+                          Admin Governance
                         </button>
                       )}
-
-                      <button
-                        onClick={() => {
-                          onOpenAuthModal('patient');
-                          setShowUserMenu(false);
-                        }}
-                        className="w-full text-left p-2 hover:bg-amber-50 text-amber-950 rounded-xl font-bold flex items-center gap-2 transition"
-                      >
-                        <User className="w-4 h-4 text-amber-600" />
-                        <span>{getTranslation('switchPatientProfile', language)}</span>
-                      </button>
-
                       <button
                         onClick={() => {
                           onSignOut();
                           setShowUserMenu(false);
                         }}
-                        className="w-full text-left p-2 hover:bg-rose-50 text-rose-700 rounded-xl font-bold flex items-center gap-2 transition"
+                        className="w-full text-left px-3 py-2.5 hover:bg-[#fef2f2] text-[#be123c] rounded-2xl font-bold flex items-center gap-2 min-h-[44px]"
                       >
-                        <LogOut className="w-4 h-4 text-rose-600" />
-                        <span>{getTranslation('signOut', language)}</span>
+                        <LogOut className="w-4 h-4" />
+                        {getTranslation('signOut', language)}
                       </button>
                     </div>
                   )}
@@ -409,25 +237,22 @@ export const Navbar: React.FC<NavbarProps> = ({
               ) : (
                 <button
                   id="nav-login-btn"
-                  onClick={() => onOpenAuthModal('caregiver')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold bg-stone-900 hover:bg-black text-white shadow-xs transition"
-                  title="Caregiver Sign In"
+                  onClick={() => onOpenAuthModal()}
+                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-full text-[12px] font-bold bg-[#1c1917] hover:bg-black text-white min-h-[44px]"
                 >
-                  <LogIn className="w-3.5 h-3.5 text-amber-400" />
+                  <LogIn className="w-4 h-4" />
                   <span className="hidden sm:inline">{getTranslation('signIn', language)}</span>
                 </button>
               )}
-
-              {/* Quick Patient Switch button (Easy handover to elderly user) */}
-              {currentView === 'caregiver' && (
+              {portal === 'caretaker' && currentView === 'caregiver' && (
                 <button
                   id="nav-patient-handover-btn"
                   onClick={() => onNavigate('patient')}
-                  className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-100/70 hover:bg-amber-200/80 text-amber-900 border border-amber-300 transition"
+                  className="hidden md:flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[12px] font-bold bg-[#9a3412] hover:bg-[#7c2d12] text-white min-h-[44px]"
                   title={`Hand over device to ${patient.name}`}
                 >
-                  <User className="w-3.5 h-3.5 text-amber-700" />
-                  <span>{patient.name.split(' ')[0]}</span>
+                  <User className="w-4 h-4" />
+                  {patient.name.split(' ')[0]}
                 </button>
               )}
             </div>

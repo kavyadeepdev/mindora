@@ -46,3 +46,5 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
+# Playwright CLI output (may contain credentials)
+.playwright-cli/

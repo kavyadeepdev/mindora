@@ -151,7 +151,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
     if (language === 'as') return `আপোনাৰ পুৱাৰ যত্নৰ সময়লৈ স্বাগতম। আহক আমি শান্তভাৱে কিছু সময় একেলগে কটাওঁ।`;
     if (language === 'kn') return `ನಿಮ್ಮ ಮುಂಜಾನೆಯ ಆರೈಕೆ ಸಮಯಕ್ಕೆ ಸುಸ್ವಾಗತ. ಕೆಲವು ನೆಮ್ಮದಿಯ ಕ್ಷಣಗಳನ್ನು ಒಟ್ಟಿಗೆ ಕಳೆಯೋಣ.`;
     if (language === 'hi') return `आपके सुबह के शांत और सुखद समय में आपका स्वागत है। आइए कुछ शांतिपूर्ण पल साथ बिताएं।`;
-    return `Welcome to your peaceful daily wellness space. Let's spend a few calm and gentle minutes together.`;
+    return `This is your peaceful daily wellness space. Let's spend a few calm and gentle minutes together.`;
   };
 
   const speakGreeting = () => {
@@ -514,15 +514,15 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
           STAGE 1: GREETING SCREEN
          ========================================================================= */}
       {flowState.step === 'greeting' && (
-        <div className="bg-white rounded-3xl border border-amber-200 p-6 sm:p-10 shadow-sm animate-in fade-in zoom-in-98 duration-300">
+        <div className="bg-white rounded-[24px] border border-[#e7e0d3] p-6 sm:p-10 shadow-[0_1px_2px_rgba(28,25,23,0.06)] animate-in fade-in zoom-in-98 duration-300">
           <div className="text-center max-w-xl mx-auto">
             
             {/* Gentle Patient Avatar */}
             <div className="relative inline-block mb-4">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-amber-100 border-3 border-amber-300 flex items-center justify-center text-4xl sm:text-5xl font-black text-amber-900 shadow-sm mx-auto">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[24px] bg-[#fbe9dc] border-2 border-[#e8c9b0] flex items-center justify-center text-4xl sm:text-5xl font-black text-[#9a3412] shadow-sm mx-auto font-display">
                 {patient.name.split(' ').map(n => n[0]).join('')}
               </div>
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-white shadow-xs">
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#4d7c0f] border-2 border-white flex items-center justify-center text-white shadow-xs">
                 <Smile className="w-4 h-4" />
               </div>
             </div>
@@ -531,15 +531,15 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             <div className="flex items-center justify-center gap-2 mb-2">
               <button
                 onClick={speakGreeting}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#f5f0e8] hover:bg-[#efe5d3] text-[#9a3412] border border-[#e7e0d3] text-xs font-bold transition cursor-pointer min-h-[44px]"
               >
-                <Volume2 className="w-3.5 h-3.5 text-amber-700" />
+                <Volume2 className="w-3.5 h-3.5" />
                 <span>Listen Aloud</span>
               </button>
             </div>
 
             {/* Greeting Heading */}
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-stone-900 tracking-tight font-['Outfit']">
+            <h1 className="font-display font-medium text-3xl sm:text-4xl text-[#1c1917] tracking-tight">
               {getGreetingHeading()}
             </h1>
             <p className="text-stone-600 text-sm sm:text-base mt-2 leading-relaxed font-medium">
@@ -547,7 +547,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             </p>
 
             {/* Doctor & Caregiver Curated Badge */}
-            <div className="mt-6 p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-left flex items-start gap-3.5">
+            <div className="mt-6 p-4 rounded-[20px] bg-[#f5f0e8] border border-[#e7e0d3] text-left flex items-start gap-3.5">
               <div className="w-10 h-10 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center shrink-0 mt-0.5">
                 <Stethoscope className="w-5 h-5 text-teal-700" />
               </div>
@@ -561,7 +561,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
                   </span>
                 </div>
                 <p className="text-stone-600 leading-snug">
-                  Personalized care plan curated by <strong>{patient.doctorName || 'Dr. Ananya Mukherjee'}</strong> & caretaker <strong>{patient.caregiverName || 'Debojit Banerjee'}</strong>.
+                  Personalized care plan curated by <strong>{patient.doctorName || 'your doctor'}</strong> and caretaker <strong>{patient.caregiverName || 'your caregiver'}</strong>.
                 </p>
                 <p className="text-[11px] text-amber-900 font-semibold pt-0.5">
                   • {prescribedActivities.length} calming brain exercises & {patientReminders.length} daily wellness routines.
@@ -579,7 +579,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
               <button
                 id="patient-greeting-next-btn"
                 onClick={() => updateFlow({ step: 'activity-intro', activityIndex: 0, reminderIndex: 0 })}
-                className="w-full py-4 px-6 rounded-2xl bg-amber-600 hover:bg-amber-700 active:scale-98 text-white font-extrabold text-base sm:text-lg shadow-md transition flex items-center justify-center gap-3 cursor-pointer"
+                className="w-full py-4 px-6 rounded-full bg-[#9a3412] hover:bg-[#7c2d12] active:scale-[0.98] text-white font-extrabold text-base sm:text-lg shadow-md transition flex items-center justify-center gap-3 cursor-pointer min-h-[56px]"
               >
                 <span>Begin Today's Activities</span>
                 <ChevronRight className="w-5 h-5" />
@@ -681,7 +681,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
                   <div className="p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 text-xs text-teal-950 flex items-start gap-2.5">
                     <Stethoscope className="w-4 h-4 text-teal-700 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold block mb-0.5">Dr. {patient.doctorName || 'Ananya Mukherjee'}'s Recommendation:</span>
+                      <span className="font-bold block mb-0.5">{patient.doctorName || 'Your doctor'}'s Recommendation:</span>
                       <span>{currentActivity.doctorNotes}</span>
                     </div>
                   </div>
@@ -781,7 +781,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             {/* Reassuring Telemetry Notice */}
             <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 text-xs text-amber-950 flex items-center justify-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-700 shrink-0" />
-              <span>Results securely recorded and shared with Dr. {patient.doctorName || 'Ananya Mukherjee'}.</span>
+              <span>Results securely recorded and shared with {patient.doctorName || 'your doctor'}.</span>
             </div>
 
             {/* Next Navigation Button */}
@@ -789,7 +789,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
               <button
                 id="performance-next-btn"
                 onClick={handleNextFromPerformance}
-                className="w-full py-4 px-6 rounded-2xl bg-amber-600 hover:bg-amber-700 active:scale-98 text-white font-extrabold text-base sm:text-lg shadow-md transition flex items-center justify-center gap-3 cursor-pointer"
+                className="w-full py-4 px-6 rounded-full bg-[#9a3412] hover:bg-[#7c2d12] active:scale-[0.98] text-white font-extrabold text-base sm:text-lg shadow-md transition flex items-center justify-center gap-3 cursor-pointer min-h-[56px]"
               >
                 {currentActivityIndex + 1 < prescribedActivities.length ? (
                   <>
@@ -965,7 +965,7 @@ export const PatientHome: React.FC<PatientHomeProps> = ({
             <div className="space-y-3 pt-2">
               <button
                 onClick={onOpenMemories}
-                className="w-full py-3.5 px-5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-sm shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3.5 px-5 rounded-full bg-[#9a3412] hover:bg-[#7c2d12] text-white font-extrabold text-sm shadow-xs transition flex items-center justify-center gap-2 cursor-pointer min-h-[52px]"
               >
                 <ImageIcon className="w-4 h-4" />
                 <span>Explore Familiar Family Memories</span>

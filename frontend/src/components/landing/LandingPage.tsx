@@ -1,17 +1,18 @@
 import React from 'react';
-import { 
-  HeartHandshake, 
-  Brain, 
-  ShieldCheck, 
+import { motion, useReducedMotion } from 'motion/react';
+import {
+  HeartHandshake,
   Stethoscope,
-  Smartphone,
-  Sparkles, 
-  ArrowRight, 
-  CheckCircle2, 
-  Clock, 
-  Sliders,
-  Calendar,
-  Users
+  ShieldCheck,
+  ArrowRight,
+  CheckCircle2,
+  Volume2,
+  WifiOff,
+  Languages,
+  Flower2,
+  Drum,
+  Bird,
+  CupSoda
 } from 'lucide-react';
 import { Language } from '../../types';
 import { getTranslation } from '../../utils/translations';
@@ -20,216 +21,248 @@ interface LandingPageProps {
   onStartPatient: () => void;
   onOpenCaregiver: () => void;
   onOpenDoctor: () => void;
-  onSelectDemoStep?: (stepNumber: number) => void;
   language: Language;
 }
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  show: (i: number = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] as const }
+  })
+};
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onStartPatient,
   onOpenCaregiver,
   onOpenDoctor,
-  onSelectDemoStep,
   language
 }) => {
+  const reduce = useReducedMotion();
+
   return (
-    <div className="bg-stone-50 min-h-[calc(100vh-4.5rem)] text-stone-900">
-      
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16">
-        <div className="max-w-3xl mx-auto text-center">
-          
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100/90 text-amber-900 border border-amber-300/80 text-xs font-bold mb-6">
-            <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse" />
-            <span>Dedicated Multi-Portal Cognitive Platform</span>
-          </div>
+    <div className="bg-[#faf9f5] text-[#1c1917]">
+      {/* HERO: asymmetric split, left copy and right photography */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 md:pt-16 pb-12">
+        <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] items-center">
+          <motion.div
+            variants={fadeUp}
+            initial={reduce ? undefined : 'hidden'}
+            animate={reduce ? undefined : 'show'}
+            className="mindora-rise"
+          >
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-[#e7e0d3] text-[12px] font-bold text-[#9a3412]">
+              <span className="w-2 h-2 rounded-full bg-[#4d7c0f]" aria-hidden />
+              Gentle care for every family
+            </span>
+            <h1 className="font-display font-medium text-4xl md:text-6xl leading-[1.05] mt-5 max-w-[12ch]">
+              A familiar companion for memory and daily care.
+            </h1>
+            <p className="text-base md:text-lg text-[#44403c] leading-relaxed mt-4 max-w-[44ch]">
+              Gentle activities, routine reminders and family telemetry in one calm place.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 mt-7">
+              <button
+                id="landing-open-patient-btn"
+                onClick={onStartPatient}
+                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[#9a3412] hover:bg-[#7c2d12] active:scale-[0.98] text-white font-bold text-sm min-h-[52px] transition"
+              >
+                Begin patient visit
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                id="landing-open-caregiver-btn"
+                onClick={onOpenCaregiver}
+                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-white border border-[#e7e0d3] hover:bg-[#f5f0e8] active:scale-[0.98] font-bold text-sm min-h-[52px] transition"
+              >
+                <ShieldCheck className="w-4 h-4 text-[#9a3412]" />
+                Open caretaker view
+              </button>
+            </div>
+            <p className="text-[13px] text-[#78716c] mt-4 font-medium">
+              {getTranslation('appTagline', language)}
+            </p>
+          </motion.div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-stone-900 tracking-tight font-['Outfit'] leading-tight">
-            {getTranslation('appName', language)}
-          </h1>
-
-          <p className="text-xl sm:text-2xl text-stone-700 font-medium mt-4 max-w-2xl mx-auto">
-            {getTranslation('appTagline', language)}
-          </p>
-
-          <p className="text-stone-500 text-sm sm:text-base mt-4 max-w-xl mx-auto leading-relaxed">
-            A tripartite architecture connecting <strong>Neurologists & Clinicians</strong>, <strong>Family Caretakers</strong>, and <strong>Elderly Individuals</strong> across dedicated subdomains.
-          </p>
-        </div>
-
-        {/* 3 Dedicated Subdomain Portals Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-5xl mx-auto">
-          
-          {/* Portal 1: Doctor Subdomain */}
-          <div className="bg-white border-2 border-teal-200/90 hover:border-teal-400 rounded-3xl p-6 sm:p-8 shadow-md flex flex-col justify-between transition group hover:shadow-lg">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center text-2xl shadow-xs group-hover:scale-105 transition">
-                  <Stethoscope className="w-7 h-7" />
-                </div>
-                <span className="text-[11px] font-bold text-teal-900 bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-full font-mono">
-                  doctor.mindora.app
-                </span>
-              </div>
-
-              <h2 className="text-2xl font-extrabold text-stone-900 font-['Outfit'] mb-2">
-                Doctor Portal
-              </h2>
-
-              <p className="text-stone-600 text-xs sm:text-sm leading-relaxed mb-4">
-                Prescribe cognitive exercises, dictate the exact sequence and round count (3, 5, 7 rounds), set medical prescriptions, and approve patient screens.
-              </p>
-
-              <ul className="space-y-2 text-xs text-stone-600 font-medium mb-6">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
-                  <span>Activity Prescriptions & Round Control</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
-                  <span>Clinical Telemetry & Progress Trends</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
-                  <span>WhatsApp Web Device Authorization</span>
-                </li>
+          <motion.div
+            variants={fadeUp}
+            initial={reduce ? undefined : 'hidden'}
+            whileInView={reduce ? undefined : 'show'}
+            viewport={{ once: true, amount: 0.3 }}
+            className="relative"
+          >
+            <div className="rounded-[28px] overflow-hidden border border-[#e7e0d3] shadow-[0_18px_50px_rgba(154,52,18,0.12)] bg-white">
+              {/* TODO: hero photo, calm morning garden, 880x1040 */}
+              <img
+                src="https://picsum.photos/seed/mindora-calm-morning/880/1040"
+                alt="Morning light over a calm garden"
+                className="w-full aspect-[5/6] sm:aspect-[4/4.4] object-cover"
+                loading="eager"
+              />
+            </div>
+            <div className="absolute -left-3 sm:-left-6 bottom-8 w-[62%] rounded-[20px] bg-white/95 backdrop-blur border border-[#e7e0d3] shadow-[0_18px_50px_rgba(28,25,23,0.14)] p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#78716c]">Today's gentle plan</p>
+              <ul className="mt-2 space-y-1.5 text-[13px] font-semibold">
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#4d7c0f]" /> Familiar memory activity</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#4d7c0f]" /> Morning tea and medicine</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#e7e0d3]" /> Garden walk with family</li>
               </ul>
             </div>
+            <div className="absolute -right-2 sm:-right-4 top-6 rounded-full bg-[#1c1917] text-white pl-2 pr-4 py-2 flex items-center gap-2 shadow-lg">
+              <span className="w-8 h-8 rounded-full bg-[#4d7c0f] flex items-center justify-center">
+                <Volume2 className="w-4 h-4" />
+              </span>
+              <span className="text-[12px] font-bold">Voice guidance in 5 languages</span>
+            </div>
+          </motion.div>
+        </div>
 
+        {/* Trust bar lives under the hero, never inside it */}
+        <div className="mt-10 flex flex-wrap items-center gap-2.5 text-[12px] font-bold text-[#6b5f52]">
+          <span className="px-4 py-2 rounded-full bg-white border border-[#e7e0d3]">doctor portal</span>
+          <span className="px-4 py-2 rounded-full bg-white border border-[#e7e0d3]">caretaker portal</span>
+          <span className="px-4 py-2 rounded-full bg-[#9a3412] text-white border border-[#9a3412]">patient companion</span>
+          <span className="px-4 py-2 rounded-full bg-[#f5f0e8] border border-[#e7e0d3] font-semibold">Offline ready</span>
+        </div>
+      </section>
+
+      {/* BENTO: one calm home for three kinds of care */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 md:py-20">
+        <motion.div
+          variants={fadeUp}
+          initial={reduce ? undefined : 'hidden'}
+          whileInView={reduce ? undefined : 'show'}
+          viewport={{ once: true, amount: 0.3 }}
+          className="max-w-2xl"
+        >
+          <h2 className="font-display font-medium text-3xl md:text-4xl leading-tight">One calm home for three kinds of care</h2>
+          <p className="text-[#44403c] mt-3 leading-relaxed">Clinicians prescribe, families organise, elders enjoy. Each portal stays simple on purpose.</p>
+        </motion.div>
+
+        <div className="grid gap-5 md:grid-cols-3 mt-8">
+          <article className="rounded-[20px] bg-[#0f766e] text-white p-7 flex flex-col justify-between min-h-[320px] overflow-hidden relative">
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-white/15 px-3 py-1 rounded-full">
+                <Stethoscope className="w-3.5 h-3.5" /> Clinical
+              </span>
+              <h3 className="font-display text-2xl mt-4">Prescribe with a light touch</h3>
+              <p className="text-sm text-white/85 mt-2 leading-relaxed">Choose activities, set round counts, follow progress trends without any clinical jargon for families.</p>
+            </div>
             <button
               id="landing-open-doctor-btn"
               onClick={onOpenDoctor}
-              className="w-full py-3.5 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+              className="mt-6 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-[#0f766e] font-bold text-sm min-h-[48px] hover:bg-[#dcf5f0] transition"
             >
-              <span>Launch Doctor Portal</span>
-              <ArrowRight className="w-4 h-4" />
+              Open clinical view <ArrowRight className="w-4 h-4" />
             </button>
-          </div>
+          </article>
 
-          {/* Portal 2: Caretaker Subdomain */}
-          <div className="bg-white border-2 border-amber-200/90 hover:border-amber-400 rounded-3xl p-6 sm:p-8 shadow-md flex flex-col justify-between transition group hover:shadow-lg">
+          <article className="rounded-[20px] bg-white border border-[#e7e0d3] overflow-hidden flex flex-col min-h-[320px]">
+            {/* TODO: caretaker photo, family kitchen, 640x400 */}
+            <img
+              src="https://picsum.photos/seed/mindora-family-kitchen/640/400"
+              alt="Family sharing morning tea at home"
+              className="w-full aspect-[16/10] object-cover"
+              loading="lazy"
+            />
+            <div className="p-7">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-[#f5f0e8] text-[#6b5f52] px-3 py-1 rounded-full">
+                <ShieldCheck className="w-3.5 h-3.5" /> Family
+              </span>
+              <h3 className="font-display text-2xl mt-3">Daily rhythm, held gently</h3>
+              <p className="text-sm text-[#44403c] mt-2 leading-relaxed">Medicine, hydration and walk reminders. Pair the patient screen in one tap.</p>
+            </div>
+          </article>
+
+          <article className="rounded-[20px] bg-[#fbe9dc] border border-[#e8c9b0] p-7 flex flex-col justify-between min-h-[320px]">
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center justify-center text-2xl shadow-xs group-hover:scale-105 transition">
-                  <ShieldCheck className="w-7 h-7 text-amber-700" />
-                </div>
-                <span className="text-[11px] font-bold text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full font-mono">
-                  caretaker.mindora.app
-                </span>
-              </div>
-
-              <h2 className="text-2xl font-extrabold text-stone-900 font-['Outfit'] mb-2">
-                Caretaker Portal
-              </h2>
-
-              <p className="text-stone-600 text-xs sm:text-sm leading-relaxed mb-4">
-                Manage daily medication, hydration, and activity reminders for loved ones. Approve incoming screen connections with one tap.
-              </p>
-
-              <ul className="space-y-2 text-xs text-stone-600 font-medium mb-6">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Daily Reminders & Schedule Manager</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />
-                  <span>One-Tap Patient Screen Pairing</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Multi-Patient Family Directory</span>
-                </li>
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-white px-3 py-1 rounded-full text-[#9a3412]">
+                <HeartHandshake className="w-3.5 h-3.5" /> Elder
+              </span>
+              <h3 className="font-display text-2xl mt-4">Big buttons, kind words</h3>
+              <p className="text-sm text-[#6b4a35] mt-2 leading-relaxed">Photo cards instead of passwords. Spoken hellos, no timers, no wrong answers.</p>
+              <ul className="mt-4 space-y-2 text-[13px] font-semibold text-[#6b4a35]">
+                <li className="flex items-center gap-2"><Volume2 className="w-4 h-4" /> Listen aloud everywhere</li>
+                <li className="flex items-center gap-2"><WifiOff className="w-4 h-4" /> Keeps working offline</li>
+                <li className="flex items-center gap-2"><Languages className="w-4 h-4" /> Five familiar languages</li>
               </ul>
             </div>
-
             <button
-              id="landing-open-caregiver-btn"
-              onClick={onOpenCaregiver}
-              className="w-full py-3.5 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-sm shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>Launch Caretaker Portal</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Portal 3: Patient Subdomain */}
-          <div className="bg-gradient-to-b from-amber-500/10 to-orange-500/5 border-2 border-amber-400 rounded-3xl p-6 sm:p-8 shadow-md flex flex-col justify-between transition group hover:shadow-lg">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-amber-600 text-white flex items-center justify-center text-3xl shadow-sm group-hover:scale-105 transition">
-                  🌸
-                </div>
-                <span className="text-[11px] font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full font-mono">
-                  patient.mindora.app
-                </span>
-              </div>
-
-              <h2 className="text-2xl font-extrabold text-stone-900 font-['Outfit'] mb-2">
-                Patient Companion
-              </h2>
-
-              <p className="text-stone-600 text-xs sm:text-sm leading-relaxed mb-4">
-                Zero-friction dementia experience. No passwords or codes. Plays doctor-prescribed games in exact order with calm voice guidance.
-              </p>
-
-              <ul className="space-y-2 text-xs text-stone-700 font-medium mb-6">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-700" />
-                  <span>WhatsApp Web Zero-Password Pairing</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-700" />
-                  <span>Prescribed Activity Sequencing</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-700" />
-                  <span>Voice Welcome & 5 Indian Languages</span>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              id="landing-open-patient-btn"
               onClick={onStartPatient}
-              className="w-full py-3.5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+              className="mt-6 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#9a3412] hover:bg-[#7c2d12] text-white font-bold text-sm min-h-[48px] transition"
             >
-              <span>Launch Patient Screen</span>
-              <ArrowRight className="w-4 h-4" />
+              Begin patient visit <ArrowRight className="w-4 h-4" />
             </button>
-          </div>
-
+          </article>
         </div>
-
-        {/* Product Tour link */}
-        {onSelectDemoStep && (
-          <div className="text-center mt-8">
-            <button
-              onClick={() => onSelectDemoStep(1)}
-              className="text-xs font-bold text-amber-900 hover:text-amber-950 underline underline-offset-4 cursor-pointer inline-flex items-center gap-1.5"
-            >
-              <Sparkles className="w-4 h-4 text-amber-700" />
-              <span>Take the Interactive 16-Step Monorepo Tour</span>
-            </button>
-          </div>
-        )}
       </section>
 
-      {/* Non-Diagnostic Clinical Positioning Banner */}
-      <section className="bg-amber-100/60 border-y border-amber-200/80 py-10 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">
-            <ShieldCheck className="w-4 h-4 text-amber-700" />
-            Healthcare Positioning & Clinical Governance
+      {/* CULTURE: full width photo band, asymmetric editorial */}
+      <section className="bg-[#1c1917] text-[#faf9f5] rounded-[28px] mx-3 sm:mx-6 overflow-hidden">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 md:py-20 grid gap-10 lg:grid-cols-[0.9fr_1.1fr] items-center">
+          <div>
+            <h2 className="font-display font-medium text-3xl md:text-4xl leading-tight">Made of familiar things</h2>
+            <p className="text-[#c9c0b2] mt-3 leading-relaxed text-[15px]">Activities use objects elders already know. Tea cups, hand fans, garden flowers, festival drums. Recognition feels like home.</p>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-stone-900 font-['Outfit'] mb-3">
-            Cognitive Engagement & Caregiver Telemetry Framework
-          </h2>
-          <p className="text-xs sm:text-sm text-stone-700 leading-relaxed font-medium max-w-3xl mx-auto">
-            MINDORA is strictly a cognitive wellness and routine assistance platform. It does <strong>not</strong> provide medical diagnoses, predict neurological decline, or replace clinical consultation. It empowers doctors and caretakers with objective observational metrics and stress-free routine structure.
+          <ul className="grid sm:grid-cols-2 gap-4">
+            {[
+              { icon: CupSoda, title: 'Morning tea rituals', body: 'Tea time and garden walks set the daily rhythm.', img: 'https://picsum.photos/seed/mindora-morning-tea/560/420' },
+              { icon: Flower2, title: 'Woven textiles and crafts', body: 'Familiar textures appear across memory cards.', img: 'https://picsum.photos/seed/mindora-woven-craft/560/420' },
+              { icon: Drum, title: 'Festival music and drums', body: 'Celebration sounds cue joy, never pressure.', img: 'https://picsum.photos/seed/mindora-festival-drum/560/420' },
+              { icon: Bird, title: 'Garden birds and trees', body: 'Birds, leaves and river scenes keep play familiar.', img: 'https://picsum.photos/seed/mindora-garden-birds/560/420' }
+            ].map((c) => (
+              <li key={c.title} className="rounded-[20px] overflow-hidden bg-white/5 border border-white/10">
+                <img src={c.img} alt={c.title} className="w-full aspect-[4/3] object-cover" loading="lazy" />
+                <div className="p-5">
+                  <p className="flex items-center gap-2 font-bold text-[14px]"><c.icon className="w-4 h-4 text-[#e8a55a]" />{c.title}</p>
+                  <p className="text-[13px] text-[#c9c0b2] mt-1.5 leading-relaxed">{c.body}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* FLOW: verb led, no numbered step labels */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 md:py-20">
+        <h2 className="font-display font-medium text-3xl md:text-4xl">How a day flows</h2>
+        <div className="grid gap-5 md:grid-cols-3 mt-8">
+          {[
+            { verb: 'Prescribe', title: 'Doctor shapes the plan', body: 'The clinician picks activities and round counts for the week. Families see the same plan in plain words.' },
+            { verb: 'Pair', title: 'Family connects the screen', body: 'The caretaker pairs the elder screen once. After that the elder just taps a photo to begin.' },
+            { verb: 'Play', title: 'Elder enjoys at ease', body: 'Calm games, spoken guidance and reminders. Progress syncs quietly when signal returns.' }
+          ].map((s) => (
+            <article key={s.verb} className="rounded-[20px] bg-white border border-[#e7e0d3] p-7">
+              <p className="font-display italic text-xl text-[#9a3412] pb-1">{s.verb}</p>
+              <h3 className="font-bold text-lg mt-1">{s.title}</h3>
+              <p className="text-sm text-[#44403c] mt-2 leading-relaxed">{s.body}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-8 rounded-[20px] bg-[#f5f0e8] border border-[#e7e0d3] p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-4">
+          <ShieldCheck className="w-8 h-8 text-[#0f766e] shrink-0" />
+          <p className="text-sm leading-relaxed text-[#44403c]">
+            <strong className="text-[#1c1917]">A note on care.</strong> Mindora supports everyday engagement and routine. It does not diagnose, predict decline or replace a clinician. It gives families structure and clinicians gentle observational notes.
           </p>
         </div>
       </section>
 
+      {/* CLOSER: editorial manifesto, centered is allowed here */}
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-20 pt-4 text-center">
+        <h2 className="font-display font-medium text-3xl md:text-5xl leading-[1.08]">Slow mornings, familiar faces, steady care.</h2>
+        <p className="text-[#44403c] mt-4 leading-relaxed">Begin with the patient screen. Everything else follows quietly.</p>
+        <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
+          <button
+            onClick={onStartPatient}
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[#9a3412] hover:bg-[#7c2d12] text-white font-bold text-sm min-h-[56px] transition"
+          >
+            Begin patient visit
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </section>
     </div>
   );
 };

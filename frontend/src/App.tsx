@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/common/Navbar';
 import { DisclaimerBanner } from './components/common/DisclaimerBanner';
-import { DemoStoryGuide } from './components/common/DemoStoryGuide';
 import { LandingPage } from './components/landing/LandingPage';
 import { PatientHome } from './components/patient/PatientHome';
 import { FamiliarMemories } from './components/patient/FamiliarMemories';
@@ -49,16 +48,13 @@ export default function App() {
   const [activeGame, setActiveGame] = useState<GameType>('memory');
   const [activeRoundsCount, setActiveRoundsCount] = useState<number>(3);
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
-  const [showDemoGuide, setShowDemoGuide] = useState(false);
   const [demoCurrentStep, setDemoCurrentStep] = useState(1);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Authentication State
-  const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role?: string } | null>({
-    name: 'Dr. Ananya Mukherjee',
-    email: 'dr.ananya@mindora.health',
-    role: 'doctor'
-  });
+  // Authentication State: null until someone signs in on their own portal.
+  // Doctor screens show the signed-in doctor, patient screens show the
+  // selected patient profile. Never a hardcoded demo identity.
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role?: string } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<'patient' | 'caregiver' | 'doctor'>('patient');
 
@@ -72,7 +68,7 @@ export default function App() {
   const [alerts, setAlerts] = useState<AlertItem[]>(() => StorageService.getAlerts());
   const [accessibility, setAccessibility] = useState<AccessibilitySettings>(() => StorageService.getAccessibility());
   const [isOffline, setIsOffline] = useState<boolean>(() => StorageService.isOffline());
-  const [language, setLanguage] = useState<Language>(() => StorageService.getActivePatient().language);
+  const [language, setLanguage] = useState<Language>(() => StorageService.getUiLanguage());
 
   // WhatsApp Web-style pairing state for patient device
   const [isPaired, setIsPaired] = useState<boolean>(() => Boolean(StorageService.getCurrentPairedDevice()));
@@ -124,6 +120,8 @@ export default function App() {
           email: sess.user.email,
           role: (sess.user as any).role || 'caregiver'
         });
+      } else {
+        setCurrentUser(null);
       }
     });
 
@@ -151,7 +149,8 @@ export default function App() {
       setAccessibility(StorageService.getAccessibility());
       const active = StorageService.getActivePatient();
       setPatient(active);
-      setLanguage(active.language);
+      // Interface language stays as the user chose it. Switching patients
+      // never flips the UI into another language.
     };
 
     window.addEventListener('online', handleOnline);
@@ -192,19 +191,11 @@ export default function App() {
     StorageService.saveAccessibility(newSettings);
   };
 
-  // Handle language updates
+  // Handle language updates: interface preference only, default English.
+  // The active patient's own language record is left untouched.
   const handleLanguageChange = (newLang: Language) => {
     setLanguage(newLang);
-    const updatedPatient = { ...patient, language: newLang };
-    setPatient(updatedPatient);
-    StorageService.savePatient(updatedPatient);
-  };
-
-  // Toggle offline simulation
-  const handleToggleOffline = () => {
-    const nextState = !isOffline;
-    StorageService.setOfflineOverride(nextState);
-    setIsOffline(nextState);
+    StorageService.saveUiLanguage(newLang);
   };
 
   // Manual cloud sync to Fastify backend
@@ -216,21 +207,37 @@ export default function App() {
     AudioSpeechService.playChime('success');
   };
 
-  // Auth & Persona Handlers
-  const handleOpenAuthModal = (tab: 'patient' | 'caregiver' | 'doctor' = 'patient') => {
-    setAuthModalTab(tab);
+  // Auth & Persona Handlers: each portal signs in its own way.
+  // Doctor screens need a doctor account, caretaker screens a caregiver
+  // account, patient screens pick a photo profile with no password.
+  const handleOpenAuthModal = (tab?: 'patient' | 'caregiver' | 'doctor') => {
+    if (tab) {
+      setAuthModalTab(tab);
+    } else if (portal === 'doctor') {
+      setAuthModalTab('doctor');
+    } else if (portal === 'patient') {
+      setAuthModalTab('patient');
+    } else {
+      setAuthModalTab('caregiver');
+    }
     setShowAuthModal(true);
   };
 
   const handleLoginSuccess = (user: { name: string; email: string; role?: string }) => {
     setCurrentUser(user);
     setShowAuthModal(false);
-    if (user.role === 'admin') {
-      handleSwitchPortal('admin');
-    } else if (user.role === 'doctor') {
+    // Reflect the signed-in professional on their own dashboard instead of
+    // leaving seeded demo names in place.
+    if (user.role === 'doctor') {
+      const activeDoc = StorageService.getDoctor();
+      StorageService.saveDoctor({ ...activeDoc, name: user.name, email: user.email });
       handleSwitchPortal('doctor');
     } else if (user.role === 'caregiver') {
+      const activeCg = StorageService.getCaregiver();
+      StorageService.saveCaregiver({ ...activeCg, name: user.name, email: user.email });
       handleSwitchPortal('caretaker');
+    } else if (user.role === 'admin') {
+      handleSwitchPortal('admin');
     }
     refreshStorageData();
   };
@@ -416,22 +423,13 @@ export default function App() {
   const pendingSyncCount = sessions.filter(s => !s.synced).length;
 
   return (
-    <div className={`min-h-screen flex flex-col font-['Plus_Jakarta_Sans'] transition-colors ${
+    <div className={`min-h-screen flex flex-col font-sans transition-colors ${
       accessibility.highContrast 
-        ? 'bg-stone-900 text-stone-100 contrast-125' 
-        : 'bg-stone-50/80 text-stone-900'
+        ? 'bg-stone-950 text-stone-50 contrast-125' 
+        : 'bg-[#faf9f5] text-[#1c1917]'
     } ${accessibility.largeText ? 'text-lg' : 'text-base'}`}>
       
-      {/* 16-Step Product Walkthrough Guide */}
-      {showDemoGuide && (
-        <DemoStoryGuide
-          currentStep={demoCurrentStep}
-          onSelectStep={handleSelectDemoStep}
-          onClose={() => setShowDemoGuide(false)}
-        />
-      )}
-
-      {/* Global Navigation Bar (No overview/patient/caretaker mode buttons) */}
+      {/* Global Navigation Bar */}
       <Navbar
         portal={portal}
         currentView={currentView === 'memories' ? 'patient' : currentView}
@@ -446,13 +444,6 @@ export default function App() {
         onLanguageChange={handleLanguageChange}
         accessibility={accessibility}
         onAccessibilityChange={handleAccessibilityChange}
-        isOffline={isOffline}
-        onToggleOffline={handleToggleOffline}
-        pendingSyncCount={pendingSyncCount}
-        onSync={handleSync}
-        isSyncing={isSyncing}
-        showDemoGuide={showDemoGuide}
-        onToggleDemoGuide={() => setShowDemoGuide(!showDemoGuide)}
         currentUser={currentUser}
         onOpenAuthModal={handleOpenAuthModal}
         onSignOut={handleSignOut}
@@ -471,7 +462,6 @@ export default function App() {
             onStartPatient={() => handleSwitchPortal('patient')}
             onOpenCaregiver={() => handleSwitchPortal('caretaker')}
             onOpenDoctor={() => handleSwitchPortal('doctor')}
-            onSelectDemoStep={handleSelectDemoStep}
             language={language}
           />
         )}
@@ -634,7 +624,7 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess}
         currentPatient={patient}
         onSelectPatient={handleSelectPatient}
-        initialTab={authModalTab === 'doctor' ? 'caregiver' : authModalTab}
+        initialTab={authModalTab}
       />
 
       {/* Quick Subdomain Switcher Bar for Localhost & Testing */}
@@ -713,17 +703,40 @@ export default function App() {
       </aside>
 
       {/* Reassuring Footer */}
-      <footer className="bg-white border-t border-stone-200 py-6 px-4 text-center text-xs text-stone-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-stone-800 font-['Outfit']">MINDORA</span>
-            <span>• Tripartite Cognitive Care & Clinical Telemetry Platform</span>
+      <footer className="bg-[#1c1917] text-[#e7e0d3] mt-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
+          <div>
+            <p className="font-display text-3xl text-[#faf9f5]">Mindora</p>
+            <p className="text-sm leading-relaxed mt-3 max-w-sm text-[#c9c0b2]">
+              A familiar companion for everyday memory, activity and care. Gentle cognitive engagement for elderly loved ones, for every family, everywhere.
+            </p>
+            <p className="text-xs mt-4 text-[#a09d96] leading-relaxed max-w-sm">
+              Cognitive wellness and routine support only. Mindora does not diagnose or treat any condition. It complements professional healthcare.
+            </p>
           </div>
-          <div className="flex items-center gap-4 text-stone-400">
-            <span>doctor.mindora.app</span>
-            <span>caretaker.mindora.app</span>
-            <span>patient.mindora.app</span>
-            <span>admin.mindora.app</span>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#a09d96]">Portals</p>
+            <ul className="mt-4 space-y-2.5 text-sm font-semibold">
+              <li><button onClick={() => handleSwitchPortal('doctor')} className="hover:text-white transition min-h-[32px]">Clinical portal</button></li>
+              <li><button onClick={() => handleSwitchPortal('caretaker')} className="hover:text-white transition min-h-[32px]">Caretaker portal</button></li>
+              <li><button onClick={() => handleSwitchPortal('patient')} className="hover:text-white transition min-h-[32px]">Patient companion</button></li>
+              <li><button onClick={() => handleSwitchPortal('landing')} className="hover:text-white transition min-h-[32px]">Home</button></li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#a09d96]">Care notes</p>
+            <ul className="mt-4 space-y-2.5 text-sm text-[#c9c0b2]">
+              <li>No timers and no rush</li>
+              <li>Large text and audio guidance</li>
+              <li>Works offline in low signal</li>
+              <li>English, Hindi, Assamese, Bengali, Kannada</li>
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-white/10">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#a09d96]">
+            <span>Mindora. Tripartite cognitive care and caregiver telemetry.</span>
+            <span>doctor . caretaker . patient . admin</span>
           </div>
         </div>
       </footer>
