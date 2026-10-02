@@ -18,7 +18,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         body: request.body ? JSON.stringify(request.body) : undefined,
       });
 
-      const res = await auth.handler(req);
+      const res = await auth.handler(req as any);
       reply.status(res.status);
       res.headers.forEach((value, key) => reply.header(key, value));
       return reply.send(res.body ? await res.text() : null);

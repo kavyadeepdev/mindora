@@ -11,4 +11,6 @@ export const config = {
   betterAuthUrl: process.env.BETTER_AUTH_URL || `http://localhost:${process.env.PORT || 4000}`,
   corsOrigins: (process.env.CORS_ORIGIN || "http://localhost:3000,http://localhost:5173").split(",").map(o => o.trim()),
   fastapiServiceUrl: process.env.FASTAPI_SERVICE_URL || "http://localhost:8000",
+  groqApiKey: process.env.GROQ_API_KEY || "",
+  groqModel: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
 };

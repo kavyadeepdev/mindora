@@ -8,7 +8,7 @@ except ImportError:
     Groq = None
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "nvidia/llama-3.1-nemotron-70b-instruct")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
 
 def generate_nemotron_summary(
     patient: Dict[str, Any],

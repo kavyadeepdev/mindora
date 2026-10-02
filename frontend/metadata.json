@@ -1,6 +1,0 @@
-{
-  "name": "MINDORA",
-  "description": "A familiar companion for everyday memory, activity and care. Cognitive engagement, memory support, and routine assistance for families, caregivers, and elderly individuals.",
-  "requestFramePermissions": ["microphone"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

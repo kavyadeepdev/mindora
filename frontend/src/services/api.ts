@@ -1,5 +1,6 @@
 import { 
   GameSession, 
+  GameType,
   PatientProfile, 
   Reminder, 
   CaregiverAlert, 
@@ -11,7 +12,9 @@ import {
   CaregiverProfile
 } from '../types';
 
-const BASE_URL = '/api';
+const BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL)
+  ? (import.meta.env.VITE_API_URL.endsWith('/') ? import.meta.env.VITE_API_URL.slice(0, -1) : import.meta.env.VITE_API_URL)
+  : '/api';
 
 interface ApiResponse<T> {
   data?: T;
@@ -195,17 +198,22 @@ export const apiClient = {
         body: JSON.stringify(params),
       }),
     getRecommendation: (params: {
+      patientId?: string;
       patientName?: string;
       age?: number;
       language?: string;
       interests?: string[];
       recentPerformance?: Record<string, unknown>;
       completedToday?: string[];
+      sessions?: any[];
     }) =>
       request<{
         recommendedActivity: string;
+        gameType?: GameType;
         culturalTheme: string;
         reasoning: string;
+        suggestedRounds?: number;
+        suggestedDifficulty?: number;
         encouragement: string;
         isAiGenerated: boolean;
         source: string;

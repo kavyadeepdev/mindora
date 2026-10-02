@@ -46,8 +46,9 @@ export default function App() {
   });
 
   const [activeGame, setActiveGame] = useState<GameType>('memory');
-  const [activeRoundsCount, setActiveRoundsCount] = useState<number>(5);
+  const [activeRoundsCount, setActiveRoundsCount] = useState<number>(3);
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
+  const [demoCurrentStep, setDemoCurrentStep] = useState(1);
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Authentication State: null until someone signs in on their own portal.
@@ -278,9 +279,148 @@ export default function App() {
   // Launch a game with doctor-prescribed rounds
   const handleStartGame = (gameType: GameType, roundsCount?: number) => {
     setActiveGame(gameType);
-    setActiveRoundsCount(roundsCount || 5);
+    setActiveRoundsCount(roundsCount || 3);
     setCurrentView('game');
   };
+
+  // Showcase Skip Handlers
+  const handleSkipCurrentActivity = () => {
+    const nowStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    StorageService.addSession({
+      id: `sess-${Date.now()}`,
+      patientId: patient.id,
+      gameType: activeGame,
+      gameTitle: activeGame === 'memory' ? 'Memory Match' : activeGame === 'attention' ? 'Attention Challenge' : activeGame === 'pattern' ? 'Pattern Recognition' : 'Daily Routine Recall',
+      score: 95,
+      accuracy: 100,
+      responseTime: 3.2,
+      attempts: 1,
+      difficulty: 2,
+      timestamp: new Date().toISOString(),
+      dateFormatted: nowStr,
+      completed: true,
+      synced: !StorageService.isOffline(),
+      notes: 'Showcase quick pass: Activity successfully completed with great focus.'
+    });
+
+    const currentFlow = StorageService.getPatientFlowState(patient.id);
+    const plan = StorageService.getActivityPlan(patient.id);
+    const activities = plan.activities.filter(a => a.enabled).sort((a, b) => a.order - b.order);
+    const nextIdx = (currentFlow.activityIndex ?? 0) + 1;
+
+    if (nextIdx < activities.length) {
+      StorageService.savePatientFlowState(patient.id, {
+        ...currentFlow,
+        step: 'activity-intro',
+        activityIndex: nextIdx
+      });
+    } else {
+      StorageService.savePatientFlowState(patient.id, {
+        ...currentFlow,
+        step: 'reminders',
+        reminderIndex: 0
+      });
+    }
+
+    refreshStorageData();
+    setCurrentView('patient');
+  };
+
+  const handleSkipAllActivities = () => {
+    const nowStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const currentFlow = StorageService.getPatientFlowState(patient.id);
+    const plan = StorageService.getActivityPlan(patient.id);
+    const activities = plan.activities.filter(a => a.enabled).sort((a, b) => a.order - b.order);
+
+    activities.forEach((act, idx) => {
+      StorageService.addSession({
+        id: `sess-${Date.now()}-${idx}`,
+        patientId: patient.id,
+        gameType: act.gameType,
+        gameTitle: act.title,
+        score: 94,
+        accuracy: 96,
+        responseTime: 3.5,
+        attempts: 1,
+        difficulty: 2,
+        timestamp: new Date().toISOString(),
+        dateFormatted: nowStr,
+        completed: true,
+        synced: !StorageService.isOffline(),
+        notes: 'Showcase quick pass: Prescribed activity completed successfully.'
+      });
+    });
+
+    StorageService.savePatientFlowState(patient.id, {
+      ...currentFlow,
+      step: 'reminders',
+      activityIndex: activities.length > 0 ? activities.length - 1 : 0,
+      reminderIndex: 0
+    });
+
+    refreshStorageData();
+    setCurrentView('patient');
+  };
+
+  // 16-Step Product Walkthrough Jump Handler
+  const handleSelectDemoStep = (stepNumber: number) => {
+    setDemoCurrentStep(stepNumber);
+    switch (stepNumber) {
+      case 1:
+        handleSwitchPortal('patient');
+        break;
+      case 2:
+        handleSwitchPortal('patient');
+        AudioSpeechService.speak(`Good morning, ${patient.name}! You are doing wonderful today.`, language);
+        break;
+      case 3:
+      case 4:
+      case 5:
+        setActiveGame('memory');
+        setActiveRoundsCount(5);
+        setCurrentView('game');
+        break;
+      case 6:
+        handleSwitchPortal('caretaker');
+        break;
+      case 7:
+        handleSwitchPortal('patient');
+        AudioSpeechService.speak("You did wonderful. Your memory focus is very steady today.", language);
+        break;
+      case 8:
+        handleSwitchPortal('patient');
+        setShowVoiceAssistant(true);
+        break;
+      case 9:
+        setShowVoiceAssistant(false);
+        handleSwitchPortal('patient');
+        break;
+      case 10:
+      case 11:
+      case 12:
+      case 13:
+        handleSwitchPortal('caretaker');
+        break;
+      case 14:
+        StorageService.setOfflineOverride(true);
+        setIsOffline(true);
+        handleSwitchPortal('patient');
+        break;
+      case 15:
+        setActiveGame('attention');
+        setActiveRoundsCount(5);
+        setCurrentView('game');
+        break;
+      case 16:
+        refreshStorageData();
+        handleSwitchPortal('caretaker');
+        break;
+      default:
+        handleSwitchPortal('patient');
+    }
+  };
+
+  const pendingSyncCount = sessions.filter(s => !s.synced).length;
 
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors ${
@@ -413,6 +553,8 @@ export default function App() {
                 language={language}
                 onFinishGame={refreshStorageData}
                 roundsCount={activeRoundsCount}
+                onSkipCurrent={handleSkipCurrentActivity}
+                onSkipAll={handleSkipAllActivities}
               />
             )}
             {activeGame === 'attention' && (
@@ -424,6 +566,8 @@ export default function App() {
                 language={language}
                 onFinishGame={refreshStorageData}
                 roundsCount={activeRoundsCount}
+                onSkipCurrent={handleSkipCurrentActivity}
+                onSkipAll={handleSkipAllActivities}
               />
             )}
             {activeGame === 'pattern' && (
@@ -435,6 +579,8 @@ export default function App() {
                 language={language}
                 onFinishGame={refreshStorageData}
                 roundsCount={activeRoundsCount}
+                onSkipCurrent={handleSkipCurrentActivity}
+                onSkipAll={handleSkipAllActivities}
               />
             )}
             {activeGame === 'routine' && (
@@ -446,6 +592,8 @@ export default function App() {
                 language={language}
                 onFinishGame={refreshStorageData}
                 roundsCount={activeRoundsCount}
+                onSkipCurrent={handleSkipCurrentActivity}
+                onSkipAll={handleSkipAllActivities}
               />
             )}
           </div>

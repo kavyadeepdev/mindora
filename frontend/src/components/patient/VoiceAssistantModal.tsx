@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, X, Volume2, Sparkles, MessageSquareQuote, Check } from 'lucide-react';
 import { AudioSpeechService } from '../../services/audioSpeech';
-import { GeminiClientService } from '../../services/geminiClient';
+import { AiAssistantService } from '../../services/aiAssistant';
 import { Language } from '../../types';
 
 interface VoiceAssistantModalProps {
@@ -131,7 +131,7 @@ export const VoiceAssistantModal: React.FC<VoiceAssistantModalProps> = ({
     setIsThinking(true);
 
     try {
-      const response = await GeminiClientService.askVoiceAssistant(queryText);
+      const response = await AiAssistantService.askVoiceAssistant(queryText);
       const newMessages: ChatMessage[] = [
         ...updatedMessages,
         {

@@ -115,3 +115,14 @@ async function start() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   start();
 }
+
+// Default export for Vercel Serverless Function execution
+let serverlessApp: any = null;
+export default async function handler(req: any, res: any) {
+  if (!serverlessApp) {
+    serverlessApp = await buildServer();
+    await serverlessApp.ready();
+  }
+  serverlessApp.server.emit("request", req, res);
+}
+
